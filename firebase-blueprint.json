@@ -1,0 +1,287 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User account profile including role, status, and academic/company assignment details",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "role": { "type": "string", "enum": ["student", "supervisor", "teacher", "admin"] },
+        "status": { "type": "string", "enum": ["pending", "active", "rejected", "suspended"] },
+        "photoURL": { "type": "string", "maxLength": 2048 },
+        "phone": { "type": "string", "maxLength": 32 },
+        "schoolOrUniv": { "type": "string", "maxLength": 128 },
+        "studentClass": { "type": "string", "maxLength": 64 },
+        "birthPlace": { "type": "string", "maxLength": 128 },
+        "birthDate": { "type": "string", "maxLength": 64 },
+        "major": { "type": "string", "enum": ["IPA", "IPS", "Teknik Komputer / TI", "Rekayasa Perangkat Lunak", "Lainnya"] },
+        "companyName": { "type": "string", "maxLength": 128 },
+        "internshipStartDate": { "type": "string", "maxLength": 64 },
+        "internshipEndDate": { "type": "string", "maxLength": 64 },
+        "supervisorId": { "type": "string", "maxLength": 128 },
+        "supervisorName": { "type": "string", "maxLength": 128 },
+        "teacherId": { "type": "string", "maxLength": 128 },
+        "teacherName": { "type": "string", "maxLength": 128 },
+        "cvUrl": { "type": "string", "maxLength": 2048 },
+        "cvFileName": { "type": "string", "maxLength": 256 },
+        "preferredLanguage": { "type": "string", "enum": ["id", "en"] },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["uid", "email", "displayName", "role", "status"]
+    },
+    "Schedule": {
+      "title": "Schedule",
+      "description": "Internship schedule entry or deadline",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 256 },
+        "description": { "type": "string", "maxLength": 2048 },
+        "date": { "type": "string", "maxLength": 64 },
+        "startTime": { "type": "string", "maxLength": 32 },
+        "endTime": { "type": "string", "maxLength": 32 },
+        "location": { "type": "string", "maxLength": 256 },
+        "assignedStudentIds": { "type": "array" },
+        "createdBy": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["upcoming", "in_progress", "completed", "cancelled"] },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["title", "date", "createdBy"]
+    },
+    "AttendanceSession": {
+      "title": "AttendanceSession",
+      "description": "Dynamic QR attendance session created by supervisor or admin",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "code": { "type": "string", "maxLength": 128 },
+        "phase": { "type": "string", "enum": ["check_in", "check_out"] },
+        "date": { "type": "string", "maxLength": 64 },
+        "startTime": { "type": "string", "maxLength": 64 },
+        "expiresAt": { "type": "string", "maxLength": 64 },
+        "durationSeconds": { "type": "number" },
+        "createdBy": { "type": "string", "maxLength": 128 },
+        "isActive": { "type": "boolean" },
+        "token": { "type": "string", "maxLength": 256 },
+        "targetStudentIds": { "type": "array" }
+      },
+      "required": ["id", "phase", "date", "expiresAt", "createdBy", "isActive"]
+    },
+    "AttendanceRecord": {
+      "title": "AttendanceRecord",
+      "description": "Individual student attendance check-in or check-out entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "studentId": { "type": "string", "maxLength": 128 },
+        "studentName": { "type": "string", "maxLength": 128 },
+        "sessionId": { "type": "string", "maxLength": 128 },
+        "phase": { "type": "string", "enum": ["check_in", "check_out"] },
+        "date": { "type": "string", "maxLength": 64 },
+        "timestamp": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "enum": ["present", "late", "excused", "incomplete"] },
+        "notes": { "type": "string", "maxLength": 1024 },
+        "verifiedBy": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "studentId", "date", "phase", "timestamp", "status"]
+    },
+    "Journal": {
+      "title": "Journal",
+      "description": "Daily internship log entry submitted by student",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "studentId": { "type": "string", "maxLength": 128 },
+        "studentName": { "type": "string", "maxLength": 128 },
+        "date": { "type": "string", "maxLength": 64 },
+        "title": { "type": "string", "maxLength": 256 },
+        "startTime": { "type": "string", "maxLength": 32 },
+        "endTime": { "type": "string", "maxLength": 32 },
+        "description": { "type": "string", "maxLength": 5000 },
+        "tasks": { "type": "string", "maxLength": 3000 },
+        "results": { "type": "string", "maxLength": 3000 },
+        "challenges": { "type": "string", "maxLength": 3000 },
+        "learnings": { "type": "string", "maxLength": 3000 },
+        "attachments": { "type": "array" },
+        "status": { "type": "string", "enum": ["draft", "submitted", "revision_requested", "approved"] },
+        "feedback": { "type": "string", "maxLength": 3000 },
+        "reviewedBy": { "type": "string", "maxLength": 128 },
+        "reviewedAt": { "type": "string", "maxLength": 64 },
+        "submittedAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "studentId", "date", "title", "status"]
+    },
+    "Documentation": {
+      "title": "Documentation",
+      "description": "Activity photo or artifact documentation entry linked to internship schedules",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "studentId": { "type": "string", "maxLength": 128 },
+        "studentName": { "type": "string", "maxLength": 128 },
+        "studentEmail": { "type": "string", "maxLength": 256 },
+        "scheduleId": { "type": "string", "maxLength": 128 },
+        "scheduleTitle": { "type": "string", "maxLength": 256 },
+        "scheduleDate": { "type": "string", "maxLength": 64 },
+        "title": { "type": "string", "maxLength": 256 },
+        "description": { "type": "string", "maxLength": 5000 },
+        "activityDate": { "type": "string", "maxLength": 64 },
+        "fileUrl": { "type": "string", "maxLength": 2048 },
+        "fileName": { "type": "string", "maxLength": 256 },
+        "fileSize": { "type": "number" },
+        "files": { "type": "array" },
+        "status": { "type": "string", "enum": ["draft", "published"] },
+        "journalId": { "type": "string", "maxLength": 128 },
+        "uploadedBy": { "type": "string", "maxLength": 128 },
+        "uploadedAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "studentId", "title", "fileUrl", "activityDate"]
+    },
+    "Assessment": {
+      "title": "Assessment",
+      "description": "Final performance assessment rubric with supervisor scoring and teacher verification",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "studentId": { "type": "string", "maxLength": 128 },
+        "studentName": { "type": "string", "maxLength": 128 },
+        "companyName": { "type": "string", "maxLength": 128 },
+        "internshipPeriod": { "type": "string", "maxLength": 128 },
+        "criteriaScores": { "type": "array" },
+        "finalScore": { "type": "number" },
+        "supervisorComments": { "type": "string", "maxLength": 3000 },
+        "supervisorId": { "type": "string", "maxLength": 128 },
+        "supervisorName": { "type": "string", "maxLength": 128 },
+        "supervisorSubmittedAt": { "type": "string", "maxLength": 64 },
+        "teacherNotes": { "type": "string", "maxLength": 3000 },
+        "teacherId": { "type": "string", "maxLength": 128 },
+        "teacherName": { "type": "string", "maxLength": 128 },
+        "teacherVerifiedAt": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "enum": ["draft", "submitted_to_teacher", "correction_requested", "verified", "published"] },
+        "publishedAt": { "type": "string", "maxLength": 64 },
+        "pdfUrl": { "type": "string", "maxLength": 2048 }
+      },
+      "required": ["id", "studentId", "status"]
+    },
+    "FinalReport": {
+      "title": "FinalReport",
+      "description": "Student final internship PDF report submission and academic review",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "studentId": { "type": "string", "maxLength": 128 },
+        "studentName": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 256 },
+        "fileUrl": { "type": "string", "maxLength": 2048 },
+        "fileName": { "type": "string", "maxLength": 256 },
+        "fileSize": { "type": "number" },
+        "version": { "type": "number" },
+        "status": { "type": "string", "enum": ["not_submitted", "submitted", "under_review", "revision_requested", "approved", "finalized"] },
+        "teacherFeedback": { "type": "string", "maxLength": 3000 },
+        "reviewedBy": { "type": "string", "maxLength": 128 },
+        "reviewedAt": { "type": "string", "maxLength": 64 },
+        "submittedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "studentId", "fileUrl", "status"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Official company and internship program announcements",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 256 },
+        "content": { "type": "string", "maxLength": 5000 },
+        "priority": { "type": "string", "enum": ["low", "normal", "high", "urgent"] },
+        "targetAudience": { "type": "string", "enum": ["all", "student", "supervisor", "teacher"] },
+        "authorName": { "type": "string", "maxLength": 128 },
+        "authorId": { "type": "string", "maxLength": 128 },
+        "publishedAt": { "type": "string", "maxLength": 64 },
+        "readBy": { "type": "array" }
+      },
+      "required": ["id", "title", "content", "priority", "publishedAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "In-app notifications for users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 256 },
+        "message": { "type": "string", "maxLength": 1024 },
+        "type": { "type": "string", "enum": ["info", "success", "warning", "action"] },
+        "link": { "type": "string", "maxLength": 256 },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "userId", "title", "message", "read", "createdAt"]
+    },
+    "AppSettings": {
+      "title": "AppSettings",
+      "description": "Application settings including criteria, rubrics, and internship periods",
+      "type": "object",
+      "properties": {
+        "companyName": { "type": "string", "maxLength": 128 },
+        "assessmentCriteria": { "type": "array" },
+        "attendanceCheckInStart": { "type": "string", "maxLength": 32 },
+        "attendanceCheckInEnd": { "type": "string", "maxLength": 32 },
+        "attendanceCheckOutStart": { "type": "string", "maxLength": 32 },
+        "attendanceCheckOutEnd": { "type": "string", "maxLength": 32 },
+        "defaultQrExpirySeconds": { "type": "number" },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profile records indexed by auth UID"
+    },
+    "/schedules/{scheduleId}": {
+      "schema": { "$ref": "#/entities/Schedule" },
+      "description": "Internship schedule entries"
+    },
+    "/attendanceSessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/AttendanceSession" },
+      "description": "Active and past attendance QR sessions"
+    },
+    "/attendanceRecords/{recordId}": {
+      "schema": { "$ref": "#/entities/AttendanceRecord" },
+      "description": "Student attendance scan records"
+    },
+    "/journals/{journalId}": {
+      "schema": { "$ref": "#/entities/Journal" },
+      "description": "Student daily journal logs"
+    },
+    "/documentation/{docId}": {
+      "schema": { "$ref": "#/entities/Documentation" },
+      "description": "Activity documentation and gallery records"
+    },
+    "/assessments/{assessmentId}": {
+      "schema": { "$ref": "#/entities/Assessment" },
+      "description": "Performance assessments and evaluations"
+    },
+    "/finalReports/{reportId}": {
+      "schema": { "$ref": "#/entities/FinalReport" },
+      "description": "Final internship reports submitted by students"
+    },
+    "/announcements/{announcementId}": {
+      "schema": { "$ref": "#/entities/Announcement" },
+      "description": "Company announcements"
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "User in-app notifications"
+    },
+    "/appSettings/{settingId}": {
+      "schema": { "$ref": "#/entities/AppSettings" },
+      "description": "Configurable system settings and assessment rubrics"
+    }
+  }
+}

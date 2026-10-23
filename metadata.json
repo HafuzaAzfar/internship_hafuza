@@ -1,0 +1,6 @@
+{
+  "name": "internship application hafuza",
+  "description": "A centralized full-stack internship management platform for PT One Data Security managing student profiles, schedules, digital QR attendance, daily journals, activity documentation, performance assessments, and final reports.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

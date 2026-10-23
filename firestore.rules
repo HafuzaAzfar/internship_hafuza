@@ -1,0 +1,151 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == "hafuza@narmadi.com" ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin")
+      );
+    }
+
+    function isStaff() {
+      return isSignedIn() && (
+        isAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "supervisor" ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "teacher"))
+      );
+    }
+
+    // Connection testing
+    match /test/connection {
+      allow read, write: if isSignedIn();
+    }
+
+    // Admins registry
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && (
+        isOwner(userId) || isAdmin()
+      );
+      allow update: if isSignedIn() && (
+        isOwner(userId) || isAdmin() || isStaff()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Schedules
+    match /schedules/{scheduleId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isStaff() || isAdmin();
+    }
+
+    // Attendance sessions (QR generation)
+    match /attendanceSessions/{sessionId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isStaff() || isAdmin();
+    }
+
+    // Attendance records
+    match /attendanceRecords/{recordId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isStaff() || isAdmin();
+    }
+
+    // Daily journals
+    match /journals/{journalId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        request.auth.uid == resource.data.studentId || isStaff() || isAdmin()
+      );
+      allow delete: if isSignedIn() && (
+        (request.auth.uid == resource.data.studentId && resource.data.status == "draft") || isAdmin()
+      );
+    }
+
+    // Activity documentation
+    match /documentation/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && (
+        request.auth.uid == resource.data.studentId || isStaff() || isAdmin()
+      );
+    }
+
+    // Performance Assessments
+    match /assessments/{assessmentId} {
+      allow read: if isSignedIn();
+      allow create, update: if isStaff() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Final reports
+    match /finalReports/{reportId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        request.auth.uid == resource.data.studentId || isStaff() || isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Announcements
+    match /announcements/{announcementId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isStaff() || isAdmin();
+    }
+
+    // In-app notifications
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+      allow delete: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+    }
+
+    // App Settings
+    match /appSettings/{settingId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Audit logs
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+  }
+}

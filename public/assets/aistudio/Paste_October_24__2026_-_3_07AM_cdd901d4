@@ -1,0 +1,1156 @@
+# MASTER PROMPT — INTERNSHIP APPLICATION HAFUZA
+
+## 1. PROJECT OVERVIEW
+
+Build a complete, functional, responsive, full-stack internship management web application named **"internship application hafuza"**.
+
+This application will be used by multiple students completing their internships at PT One Data Security. It will provide a centralized platform to manage student profiles, internship schedules, digital attendance using dynamic QR codes, daily journals, activity documentation, performance assessments, final internship reports, and announcements.
+
+This must be a real, database-connected application, NOT a static UI prototype, landing page, or frontend-only mockup.
+
+The application must include a working frontend, backend logic, Firebase integration, file storage, authentication, role-based authorization, validation, and a maintainable codebase that can be connected to a new GitHub repository.
+
+### Primary requirements
+
+- Application name: internship application hafuza
+- Company: PT One Data Security
+- Default language: Bahasa Indonesia
+- Secondary language: English
+- Platform: Responsive web application for desktop, tablet, and mobile
+- Architecture: Full-stack web application
+- Authentication: Firebase Authentication with Google Sign-In and email/password
+- Database: Cloud Firestore
+- File storage: Firebase Cloud Storage
+- Source code management: GitHub
+- Timezone: Asia/Jakarta
+- Internship duration: Configurable start and end dates, typically spanning several months or one semester
+- Primary design reference: The provided Spark Admin dashboard screenshot
+
+Use the capabilities available in Google AI Studio Build mode. Create the actual application files, integrate the necessary services, and verify the implementation. Do not merely return a development plan, illustrative code snippets, or a design specification.
+
+If a required external service needs authorization, configuration, billing activation, or manual console setup, clearly identify the exact step instead of pretending that the integration is complete.
+
+---
+
+## 2. USERS, ROLES, AND PERMISSIONS
+
+The application must support four distinct user roles.
+
+### A. Student
+
+Students can:
+
+- Register and wait for administrator approval.
+- Log in using Google or email/password.
+- View and update permitted personal profile information.
+- Upload and change their profile photo.
+- Upload their CV for internship administration.
+- View their own internship schedule.
+- Scan dynamic QR codes for check-in and check-out.
+- View their attendance records and attendance summaries.
+- Create, save, edit, and submit daily journals.
+- Upload activity photos and supporting documents.
+- View journal review comments and requested revisions.
+- Access their activity documentation gallery.
+- Read announcements.
+- Upload their final internship report.
+- Track the review and approval status of their final report.
+- View their final performance assessment once it has been officially released.
+- Download the released final assessment as a PDF.
+- Download their approved final internship report.
+- Edit their own profile within the permitted fields.
+
+Students must never be able to view another student's private profile, CV, journals, attendance details, or unpublished assessment.
+
+### B. Company Supervisor
+
+Company supervisors represent the authorized internship mentors at PT One Data Security.
+
+They can:
+
+- View only the students assigned to them.
+- Access the permitted profiles of their assigned students.
+- View relevant CVs and internship schedules.
+- Create and manage authorized attendance sessions.
+- Generate dynamic QR codes for attendance.
+- Monitor check-in and check-out records.
+- Review submitted daily journals.
+- Approve journals or request revisions with written feedback.
+- View the activity documentation of assigned students.
+- Access submitted final internship reports.
+- Complete the final assessment rubric for assigned students.
+- Enter assessment comments and recommendations.
+- Submit the assessment to the teacher for evaluation and verification.
+- View the verification status of submitted assessments.
+
+Supervisors must not access students who are not assigned to them unless an administrator explicitly grants the required permission.
+
+### C. Teacher / Academic Supervisor
+
+Teachers are responsible for academic monitoring and verification.
+
+They can:
+
+- View students assigned to them.
+- Monitor attendance summaries, internship schedules, journal progress, and documentation.
+- Review submitted final internship reports.
+- Request revisions or approve reports.
+- Evaluate the final assessment submitted by the company supervisor.
+- Add academic evaluation notes.
+- Verify or return an assessment for correction.
+- Access the final PDF assessment after publication, according to their authorization.
+- Monitor completion status and outstanding requirements.
+
+Teachers must not be able to change the company's original assessment scores without an explicitly authorized correction process.
+
+### D. Administrator
+
+Administrators manage the application and its operational settings.
+
+They can:
+
+- Review student registrations.
+- Approve, reject, or suspend student accounts.
+- Manage student, supervisor, teacher, and administrator accounts.
+- Assign students to company supervisors and teachers.
+- Manage internship periods and student internship status.
+- Manage schedules and attendance rules.
+- View and manage authorized attendance records.
+- Manage announcements.
+- Monitor journals, documentation, final reports, and evaluations.
+- Configure assessment criteria and scoring weights.
+- Publish or release completed assessments.
+- Review application activity and audit logs.
+- Manage application-level settings and permitted user access.
+
+Administrators should receive a dedicated administration interface, accessible only to users with verified administrator privileges.
+
+### Important authorization rules
+
+Never trust a role supplied by the client, a form, a URL parameter, or browser storage.
+
+Public registration must always create an account with a default student role and pending approval status. Users must not be able to register themselves as administrators, supervisors, or teachers.
+
+Staff roles must be provisioned or assigned by an authorized administrator through a secure process.
+
+The first administrator must be configured through a documented, secure bootstrap procedure. Do not create a publicly accessible administrator registration route or hardcode administrator credentials.
+
+---
+
+## 3. VISUAL DESIGN SYSTEM — FOLLOW THE REFERENCE IMAGE
+
+Treat the supplied Spark Admin dashboard screenshot as the primary design reference.
+
+Reproduce its overall visual composition as closely as practical while adapting the content and components to an internship management application.
+
+Do not copy irrelevant sales analytics or retain unrelated sales metrics. Preserve the visual identity, layout, spacing, proportions, and component styling.
+
+### A. Overall design language
+
+The design must feel:
+
+- Modern and professional.
+- Clean, minimal, and well organized.
+- Premium SaaS dashboard quality.
+- Spacious, with clear information hierarchy.
+- Consistent across every page.
+- Appropriate for a professional internship environment.
+
+### B. Color palette
+
+Use the following initial design tokens, adjusting slightly only when necessary for readability and consistency.
+
+- Sidebar background: `#061F16`
+- Sidebar selected item: `#102F23`
+- Primary green: `#0B3325`
+- Lime accent: `#B7F500`
+- Main background: `#F3F6F4`
+- Card background: `#FFFFFF`
+- Primary text: `#111A16`
+- Secondary text: `#718078`
+- Border: `#E6ECE8`
+- Success: `#16A34A`
+- Warning: `#F59E0B`
+- Error: `#EF4444`
+
+Use bright lime green sparingly for important actions, active navigation icons, chart highlights, and positive visual emphasis. Avoid making every component neon green.
+
+### C. Typography and components
+
+Use a clean sans-serif typeface such as Inter or Plus Jakarta Sans.
+
+Implement consistent:
+
+- Rounded cards.
+- Soft, restrained shadows.
+- Thin, subtle borders.
+- Generous internal padding.
+- Clear page titles and descriptive subtitles.
+- Compact metadata labels.
+- Consistent button sizes.
+- Accessible form controls.
+- Clearly differentiated active, disabled, loading, success, warning, and error states.
+
+Use Lucide icons or another consistent icon library. Avoid mixing unrelated icon styles.
+
+### D. Sidebar
+
+Create a persistent, dark-green sidebar on the left, inspired by the reference screenshot.
+
+At the top, display a custom brand mark and the name:
+
+**internship application hafuza**
+
+Below it, organize the navigation into clear groups.
+
+**MAIN MENU**
+- Dashboard
+- Jadwal Magang
+- Presensi Digital
+- Jurnal Harian
+- Dokumentasi Kegiatan
+- Penilaian & Evaluasi
+- Laporan Akhir Magang
+- Pengumuman
+
+**ACCOUNT**
+- Profil Saya
+
+Use icons, muted labels, and a rounded highlighted background for the selected menu item.
+
+At the bottom, display a compact profile panel containing the current user's profile image, name, and role.
+
+On smaller screens, transform the sidebar into an accessible collapsible navigation drawer. Preserve the desktop sidebar design at large viewport widths.
+
+Navigation visibility must depend on user permissions.
+
+### E. Top navigation bar
+
+Create a horizontal topbar with the following elements:
+
+- Sidebar collapse control.
+- Contextual page action, such as Create or Tambah Data, when permitted.
+- Global search field.
+- Notification icon with unread indicator.
+- Fullscreen control when supported.
+- Current user's profile photo.
+- User's display name and role.
+- Profile dropdown with Profile, Account Settings, Language, and Logout.
+
+The global search must search only records the current user is authorized to access.
+
+Ensure that topbar controls and buttons actually work.
+
+### F. Main dashboard composition
+
+Follow the reference image's hierarchy:
+
+1. Page heading and subtitle.
+2. Contextual date or reporting-period selector where useful.
+3. Three prominent summary cards in a horizontal row on desktop.
+4. A large primary analytics card with a smaller secondary panel.
+5. Additional activity and progress cards beneath them.
+
+Use the same visual proportions, rounded shapes, light background, spacing, and restrained lime accents as the reference.
+
+On mobile, rearrange these components into a single-column layout without horizontal overflow.
+
+### G. Internship-specific dashboard content
+
+Replace the sales dashboard content with real internship data.
+
+For students, show three prominent summary cards, such as:
+
+- Internship status and days remaining.
+- Attendance percentage and attendance count.
+- Journal submission progress.
+
+Include a larger progress and activity visualization with relevant metrics such as weekly attendance and journal submissions.
+
+Add secondary panels for:
+
+- Upcoming schedules.
+- Recent journal review activity.
+- Announcements.
+- Final report submission progress.
+- Assessment status.
+- Upcoming deadlines.
+
+For company supervisors, emphasize students under supervision, journals awaiting review, current attendance sessions, and outstanding assessments.
+
+For teachers, emphasize student progress, final reports awaiting review, assessment verification, and students who need follow-up.
+
+For administrators, emphasize total students, pending registrations, active internships, attendance summaries, outstanding journals, and assessment completion.
+
+All statistics and charts must be derived from actual authorized database records.
+
+Never display fabricated production metrics, placeholder sales figures, or invented attendance history. When data is missing, display a well-designed empty state with an appropriate message and action.
+
+Use an appropriate chart library, such as Recharts, if it is compatible with the project.
+
+---
+
+## 4. APPLICATION PAGES AND FUNCTIONAL REQUIREMENTS
+
+Implement every page listed below with functional interactions, backend integration, appropriate permissions, loading states, validation, and error handling.
+
+### A. Authentication and registration
+
+Build:
+
+- Login page.
+- Student registration page.
+- Google Sign-In.
+- Email/password registration.
+- Email/password login.
+- Forgot-password flow.
+- Email verification handling where applicable.
+- Pending approval page.
+- Rejected or suspended account state.
+- Logout.
+
+After successful authentication:
+
+1. Verify that the authentication session is valid.
+2. Load the user's trusted profile and account status.
+3. Redirect pending users to the approval status screen.
+4. Redirect active users to the appropriate dashboard.
+5. Prevent unauthorized users from accessing protected routes.
+
+Do not expose protected page content before authorization has been established.
+
+Use Firebase Authentication for actual authentication rather than custom plaintext-password storage.
+
+### B. Dashboard
+
+Create role-specific dashboards that display relevant, database-backed information.
+
+Every statistic must be traceable to real records and respect permissions.
+
+Include functional date filtering where it adds value, contextual quick actions, and links to the relevant detail pages.
+
+Provide useful empty states when a new user has no records.
+
+### C. Jadwal Magang
+
+Create schedule management with:
+
+- Calendar view.
+- List view.
+- Daily and weekly schedule summaries.
+- Schedule title.
+- Date and time.
+- Activity description.
+- Location or meeting information when applicable.
+- Assigned students.
+- Schedule creator.
+- Optional reminders and deadlines.
+- Schedule status.
+
+Administrators and authorized supervisors can create or edit schedules according to their permissions.
+
+Students can view their own schedules but cannot modify official schedules.
+
+Teachers can view schedules for their assigned students.
+
+Provide filtering by date, student, status, and other relevant dimensions.
+
+Store dates consistently and display local times using the Asia/Jakarta timezone.
+
+### D. Presensi Digital
+
+Create a complete digital attendance module using dynamic QR codes.
+
+#### Supervisor/admin workflow
+
+1. Authorized users select the applicable students or groups.
+2. Select the date and attendance phase: Check-in or Check-out.
+3. Configure the permitted attendance window.
+4. Generate a dynamic QR code.
+5. Display the QR code with its expiration countdown.
+6. Allow the session to be closed or invalidated.
+7. Display live or refreshed attendance results.
+
+A QR session must contain a unique, time-limited identifier or signed token that can be validated by a trusted backend.
+
+Never rely exclusively on a QR code generated and validated entirely in untrusted client-side code.
+
+#### Student workflow
+
+1. Open the attendance page.
+2. Select Scan QR.
+3. Grant camera permission when requested.
+4. Scan the active QR code.
+5. Submit the scan for server-side validation.
+6. Receive a clear success or failure result.
+7. View the recorded attendance timestamp.
+
+Support appropriate manual camera recovery options, such as retrying camera permission or using a file/image scanner when feasible. An alternative scanning interface must not bypass server-side authorization or token validation.
+
+#### Attendance rules
+
+Implement:
+
+- Check-in and check-out as separate attendance phases.
+- QR expiration.
+- Validity-window enforcement.
+- Prevention of duplicate check-ins and check-outs.
+- Prevention of out-of-order attendance transitions.
+- Student identity verification from the authenticated session.
+- Prevention of attendance for a student outside the authorized group.
+- Rejection of revoked, invalid, and expired QR tokens.
+- Server-side timestamp recording.
+- Attendance status such as Present, Late, Incomplete, and applicable exception states.
+- Attendance correction workflow for authorized staff.
+- Attendance audit trail.
+- Daily, weekly, monthly, and internship-period summaries.
+
+Define the attendance rules through configurable application settings where appropriate.
+
+Use Asia/Jakarta as the display timezone.
+
+Never allow the student to directly submit an arbitrary attendance timestamp or mark their own attendance as verified.
+
+If secure backend validation cannot be completed without additional Firebase or Google Cloud configuration, identify the missing configuration and do not replace it with a fake or insecure implementation.
+
+### E. Jurnal Harian
+
+Create a daily internship journal system.
+
+Each entry must contain:
+
+- Date.
+- Activity title.
+- Start and end time where applicable.
+- Detailed activity description.
+- Objectives or tasks.
+- Work results.
+- Challenges encountered.
+- Reflection or lessons learned.
+- Optional supporting attachments.
+- Submission timestamp.
+- Review status.
+- Supervisor feedback.
+
+#### Journal workflow
+
+1. Students create and save journal drafts.
+2. Students can edit drafts before submission.
+3. Students submit a journal for review.
+4. The assigned company supervisor reviews it.
+5. The supervisor can approve it or request revisions.
+6. Revision requests must include feedback.
+7. Students can revise and resubmit the entry.
+8. The application maintains the appropriate status history.
+
+Statuses should include Draft, Submitted, Under Review, Revision Requested, and Approved.
+
+Only authorized supervisors may review journals assigned to them. Teachers may monitor journals for students assigned to them according to their permissions, but journal approval does not require teacher approval unless explicitly configured.
+
+Once a journal is approved, restrict edits to protect the record. Corrections must follow an explicit, authorized correction workflow.
+
+Include search, date filters, status filters, pagination, and journal detail views.
+
+### F. Dokumentasi Kegiatan
+
+Build an activity documentation gallery for internship records.
+
+Allow authorized students to upload images and, where properly supported, videos or supporting documents.
+
+Each documentation record should contain:
+
+- Title.
+- Description.
+- Activity date.
+- Related journal entry when applicable.
+- Uploaded file.
+- Uploaded-by identity.
+- Upload timestamp.
+- Visibility and access permissions.
+
+Implement:
+
+- Grid and list views.
+- Image previews.
+- File metadata display.
+- Search and filters.
+- Relevant journal links.
+- Authorized upload and delete actions.
+- Upload progress indicators.
+- Graceful handling of failed uploads.
+
+Keep files in Firebase Cloud Storage and store file metadata and relationships in Firestore.
+
+Private internship documentation must not be made publicly accessible through unrestricted file URLs.
+
+### G. Profil Saya
+
+Create a profile page containing:
+
+- Profile photo.
+- Full name.
+- Email address.
+- Class.
+- Place of birth.
+- Date of birth.
+- Major: IPA or IPS.
+- User role.
+- Account status.
+- Company information.
+- Internship period.
+- Assigned company supervisor.
+- Assigned teacher, where applicable.
+- CV file status.
+
+Allow users to upload or replace their own profile photo.
+
+Provide suitable image validation, size limits, upload progress, preview, and error messages.
+
+The user's email must correspond to the authenticated account. Changing an authentication email must follow Firebase Authentication's supported verification procedures.
+
+Users must not be able to change their own role, approval status, official assignments, or other protected administrative fields.
+
+The profile form must distinguish editable personal fields from administrator-controlled fields.
+
+Add an option to upload a CV in PDF or DOCX format.
+
+Store the CV securely and associate it with the authenticated student.
+
+CVs must be available only to the student and authorized administrative or company personnel who need access for internship administration.
+
+The application must not pretend that uploading a CV automatically submits it externally; the file is stored in the authorized application portal.
+
+### H. Penilaian & Evaluasi
+
+Implement the complete final assessment workflow.
+
+#### Supervisor assessment
+
+The assigned company supervisor evaluates the student using an editable, configurable rubric.
+
+Suggested default criteria:
+
+- Professionalism.
+- Discipline and punctuality.
+- Technical competence.
+- Quality of work.
+- Communication.
+- Teamwork.
+- Initiative and problem-solving.
+- Ability to learn and adapt.
+
+Use a consistent default rating scale of 1–5 for each criterion.
+
+Administrators must be able to edit criteria and configure their weights. Validate that applicable scoring weights total 100%.
+
+Calculate the normalized final score using the configured weights. Display the calculation method consistently and prevent invalid or incomplete criteria from producing a final result.
+
+The assessment must include:
+
+- Student information.
+- Internship period.
+- Assessment criteria.
+- Criterion-level scores.
+- Weighted score.
+- Final score.
+- Written supervisor comments.
+- Assessor identity.
+- Submission timestamp.
+- Assessment status.
+
+The company supervisor submits the completed assessment to the teacher.
+
+#### Teacher verification
+
+The teacher can:
+
+- Review the assessment.
+- Review the supervisor's comments.
+- Add academic evaluation notes.
+- Verify the assessment.
+- Return the assessment for correction with a clear explanation.
+
+If returned, the assessment must return to the appropriate correction state.
+
+Maintain a clear record of submission, return, correction, verification, and publication events.
+
+#### Publication and PDF download
+
+Only an authorized, verified, and published final assessment may be released to the student.
+
+Generate a professionally formatted, downloadable PDF containing:
+
+- Application and company identity.
+- Student name and profile information appropriate for an official report.
+- Class and major.
+- Internship start and end dates.
+- Criterion-level scores.
+- Weighted final score.
+- Supervisor comments.
+- Teacher evaluation or verification information.
+- Assessment publication date.
+- Authorized assessor identities and signature areas when applicable.
+
+Signature images or electronic signatures must not be invented. If an authenticated digital signature workflow has not been configured, display an appropriate signature field instead.
+
+Keep the assessment PDF separate from the student's final internship report.
+
+Do not publish assessments automatically before teacher verification.
+
+Provide clear PDF download and error states.
+
+### I. Laporan Akhir Magang
+
+Create a dedicated final-report submission and review module.
+
+Students upload their completed final internship report as a PDF.
+
+Display:
+
+- Submission instructions.
+- Report title.
+- Internship period.
+- Upload timestamp.
+- Current submission version.
+- Review status.
+- Reviewer comments.
+- Revision history.
+- Download action.
+
+#### Workflow
+
+1. The student uploads the report.
+2. The assigned supervisor can view the submission according to their permissions.
+3. The assigned teacher reviews the report.
+4. The teacher either requests revisions or approves it.
+5. The student can upload a revised version.
+6. The system records the latest submission and its status.
+7. The student can download the approved report.
+
+Use statuses such as Not Submitted, Submitted, Under Review, Revision Requested, Approved, and Finalized.
+
+The teacher is responsible for academic review and final approval. Company supervisor access does not automatically grant the right to approve the academic report.
+
+Store the report file in private Firebase Cloud Storage and keep version and status metadata in Firestore.
+
+Generate the separate final assessment PDF only through the assessment workflow described above.
+
+### J. Pengumuman
+
+Create an announcement management and reading interface.
+
+Administrators should be able to create, edit, publish, and archive announcements.
+
+Each announcement can include:
+
+- Title.
+- Content.
+- Publication date.
+- Author.
+- Priority.
+- Optional attachment.
+- Target audience.
+- Optional publication and expiry dates.
+
+Allow announcements to target all users or selected roles, students, or groups.
+
+Display announcements on the dashboard and dedicated page.
+
+Implement unread indicators and per-user read status.
+
+Only authorized staff may publish announcements.
+
+### K. Notifications and global search
+
+Implement in-app notifications for relevant events, including:
+
+- Registration approval or rejection.
+- Upcoming schedule reminders.
+- Attendance results.
+- Journal review outcomes.
+- Journal revision requests.
+- Final report review outcomes.
+- Assessment verification and publication.
+- New announcements.
+
+Notifications must be created from real application events.
+
+Avoid displaying fake notifications or counts. Provide an unread filter and a way to mark a notification as read.
+
+Global search must return only authorized records and should support relevant entities such as schedules, journals, announcements, students, and reports according to the current user's role.
+
+---
+
+## 5. FIREBASE BACKEND ARCHITECTURE
+
+Use Firebase as the persistent backend from the beginning.
+
+Do not simulate backend persistence using localStorage, in-memory arrays, static JSON, or browser-only fake authentication.
+
+### A. Firebase Authentication
+
+Configure:
+
+- Google Sign-In.
+- Email/password authentication.
+- Registration flow.
+- Login flow.
+- Password reset.
+- Session handling.
+- Email verification handling where appropriate.
+- Account status and authorization checks.
+- Secure logout.
+
+Support a pending student approval flow.
+
+All protected routes must verify authentication and permissions before exposing data.
+
+### B. Cloud Firestore database
+
+Design a consistent and maintainable Firestore schema. At minimum, use the following logical collections:
+
+- `users`
+- `companies`
+- `internships`
+- `supervisorAssignments`
+- `teacherAssignments`
+- `schedules`
+- `attendanceSessions`
+- `attendanceRecords`
+- `journals`
+- `journalReviews`
+- `documentation`
+- `assessments`
+- `assessmentReviews`
+- `finalReports`
+- `announcements`
+- `notifications`
+- `auditLogs`
+- `appSettings`
+
+These collection names may be refined when necessary, but equivalent functionality and relationships must be preserved.
+
+Use the Firebase Authentication UID as the canonical identity reference.
+
+Include appropriate fields for:
+
+- Creation timestamps.
+- Last modification timestamps.
+- Record owner.
+- Assigned student.
+- Assigned supervisor and teacher.
+- Status.
+- Relevant relationships.
+- Revision or version numbers.
+- Audit information.
+
+Do not duplicate sensitive information unnecessarily.
+
+Use server-generated timestamps for important operational events.
+
+Establish indexes for common filters and queries. Handle pagination correctly and avoid fetching unrestricted collections into the browser.
+
+### C. Firebase Cloud Storage
+
+Configure private storage for:
+
+- Profile photos.
+- CVs.
+- Journal attachments.
+- Activity documentation.
+- Final internship reports.
+- Published assessment PDFs.
+
+Use predictable, non-sensitive object paths, such as:
+
+- `profile-photos/{uid}/...`
+- `cvs/{studentUid}/...`
+- `journals/{studentUid}/{journalId}/...`
+- `documentation/{studentUid}/{documentationId}/...`
+- `final-reports/{studentUid}/{reportId}/...`
+- `assessments/{studentUid}/{assessmentId}/...`
+
+Use server-generated unique filenames where appropriate.
+
+Validate permitted MIME types, extensions, file sizes, ownership, and authorization before accepting uploads.
+
+Suggested upload constraints:
+
+- Profile photos: JPG, PNG, or WEBP, maximum 5 MB.
+- CVs: PDF or DOCX, maximum 10 MB.
+- Journal attachments: permitted images and documents, maximum 10 MB per file.
+- Activity images: permitted image formats, maximum 10 MB per file.
+- Videos: only when supported and explicitly configured, with a reasonable configurable size limit.
+- Final reports: PDF, maximum 20 MB.
+
+These limits must be enforced by both application validation and the applicable storage security controls.
+
+Avoid unrestricted public download URLs for private student files.
+
+Use authenticated access or another appropriately authorized download mechanism.
+
+If Cloud Storage is not automatically provisioned by Google AI Studio, provide the exact setup steps and complete the integration once the required authorization and configuration are available. Do not store uploaded file contents as base64 inside Firestore documents.
+
+### D. Backend runtime and trusted operations
+
+Use the server-side runtime or another appropriately configured trusted backend for operations that require privileged validation.
+
+Trusted operations include:
+
+- Validating dynamic attendance QR tokens.
+- Enforcing time-limited attendance sessions.
+- Preventing duplicate attendance transitions.
+- Performing protected administrative actions.
+- Finalizing assessment calculations where authoritative calculation is required.
+- Publishing official assessment PDFs.
+- Writing sensitive audit records.
+
+Use Firebase Admin SDK or another secure server-side mechanism only where its credentials and deployment environment are properly configured.
+
+Never expose service account private keys, privileged credentials, or sensitive secrets in browser code, committed files, or public GitHub repositories.
+
+Never trust client-provided role claims, score totals, review statuses, or attendance timestamps.
+
+If a required server function cannot be deployed automatically, specify the required Firebase or Google Cloud configuration instead of silently downgrading the security design.
+
+---
+
+## 6. FIREBASE SECURITY RULES
+
+Security is a core requirement.
+
+Write and include actual Firebase Security Rules for Firestore and Cloud Storage.
+
+Rules must be restrictive by default. Do not use unrestricted development rules such as allowing every authenticated user to read and write every document.
+
+### Required authorization behavior
+
+- Students can access their own protected profile data.
+- Students can access only their own attendance records, journals, reports, and assessments.
+- Students cannot assign roles to themselves.
+- Students cannot approve their own accounts.
+- Students cannot forge supervisor reviews or teacher verification.
+- Supervisors can access the records of their assigned students according to their responsibilities.
+- Teachers can access and verify the records of their assigned students according to their responsibilities.
+- Administrators can perform authorized administrative operations.
+- Users cannot change protected fields by manipulating client requests.
+- Private files cannot be downloaded merely because a file path is known.
+- Upload rules must verify the uploader's identity, applicable ownership, file type, and permitted size.
+- Published assessment PDFs must remain inaccessible to unauthorized users.
+- Audit records cannot be freely edited or deleted by ordinary users.
+
+Rules must validate important changes and status transitions, not just check whether a user is logged in.
+
+Use server-side validation for operations that cannot be secured adequately using client-side checks and Security Rules alone.
+
+Document any limitations caused by privileged server-side access, and secure server endpoints using authentication and explicit authorization checks.
+
+Add automated rule tests where the environment supports them.
+
+Before calling the application production-ready, review and test the actual rules against the requirements above.
+
+---
+
+## 7. GITHUB SOURCE CONTROL
+
+Prepare the project for synchronization with a new GitHub repository.
+
+Suggested repository name:
+
+`internship-application-hafuza`
+
+The repository must contain:
+
+- Complete application source code.
+- Organized frontend and backend modules.
+- Firebase integration and configuration files that are safe to commit.
+- A clear README.
+- An environment variable example file without real secrets.
+- Firebase Security Rules.
+- Firestore index definitions when used.
+- Applicable database or deployment configuration.
+- Setup and deployment instructions.
+- A clear `.gitignore`.
+
+Never commit real credentials, service account keys, private API keys, tokens, passwords, or sensitive personal data.
+
+The README should explain:
+
+1. Project overview.
+2. Technology stack.
+3. Local development setup.
+4. Required environment variables.
+5. Firebase project configuration.
+6. Authentication provider setup.
+7. Cloud Firestore setup.
+8. Cloud Storage setup.
+9. Security Rules deployment.
+10. First administrator setup.
+11. GitHub synchronization.
+12. Testing.
+13. Deployment.
+14. Known limitations or outstanding configuration steps.
+
+Do not claim that a GitHub repository has been created or synchronized until the actual integration confirms success.
+
+When repository authorization or creation requires user action, provide clear instructions through Google AI Studio's GitHub integration.
+
+Keep the repository structure maintainable and avoid committing generated build artifacts unnecessarily.
+
+---
+
+## 8. MULTILINGUAL SUPPORT
+
+The application must support Bahasa Indonesia and English throughout the interface.
+
+Provide a language switcher in the topbar or account settings.
+
+Bahasa Indonesia is the default language.
+
+Translate:
+
+- Navigation labels.
+- Page headings.
+- Buttons.
+- Forms.
+- Validation messages.
+- Notifications.
+- Empty states.
+- Status labels.
+- Assessment information.
+- Report instructions.
+- Error messages.
+- Confirmation dialogs.
+
+Use a structured internationalization approach rather than scattering hardcoded conditional translations throughout components.
+
+Save the user's language preference in an appropriate persistent profile setting, with a local preference fallback when appropriate.
+
+Language switching must update the actual interface without unnecessarily logging out the user or discarding unsaved work.
+
+Keep formal generated assessment and report documents consistent in their selected language or explicitly label the document language.
+
+---
+
+## 9. TECHNICAL IMPLEMENTATION
+
+Use a modern, maintainable application architecture compatible with Google AI Studio Build mode.
+
+Recommended stack:
+
+- React.
+- TypeScript.
+- Tailwind CSS or an equivalent consistent styling system.
+- Firebase Authentication.
+- Cloud Firestore.
+- Firebase Cloud Storage.
+- Node.js server runtime for trusted backend functionality.
+- Recharts or an equivalent chart library.
+- A maintained QR code generation and scanning library.
+- An appropriate PDF generation library.
+- React Router or the routing solution supported by the project.
+
+These are implementation preferences, not permission to disregard the existing environment. If Google AI Studio establishes a different compatible structure, preserve the existing project conventions and implement equivalent functionality.
+
+### Code quality
+
+- Use reusable components.
+- Separate data access logic from presentation components.
+- Separate authentication and authorization logic.
+- Use typed data models.
+- Implement reusable validation schemas.
+- Provide consistent error handling.
+- Avoid giant monolithic components.
+- Avoid unnecessary duplicated code.
+- Implement accessible keyboard interactions and labels.
+- Follow responsive design principles.
+- Handle loading states and network failures.
+- Prevent accidental duplicate submissions.
+- Use reliable date parsing and formatting.
+- Keep private configuration on the server.
+- Ensure that every import, dependency, route, and component resolves correctly.
+
+Use sensible dependency choices and do not install unnecessary packages.
+
+### UX behavior
+
+Every important action must perform the advertised behavior.
+
+Examples:
+
+- Save buttons must persist data.
+- Upload buttons must upload actual files.
+- Download buttons must produce real downloadable files.
+- QR scanners must validate actual attendance sessions.
+- Review buttons must persist the corresponding review status.
+- Approval buttons must update authorized records.
+- Search and filters must change the displayed data.
+- Pagination must load the correct records.
+- Notification controls must update read status.
+- Language controls must switch the interface.
+- Logout must actually terminate the session.
+
+Do not include dead buttons, fake charts, simulated success notifications, or hardcoded results in production functionality.
+
+Use confirmation dialogs for important irreversible actions and clear notifications for successful or failed operations.
+
+---
+
+## 10. DATA VALIDATION AND WORKFLOW INTEGRITY
+
+Build proper validation for every important operation.
+
+Examples:
+
+- Registration must validate required fields.
+- Profiles must validate field formats.
+- Schedules must validate date and time ranges.
+- Journals must have required content before submission.
+- QR sessions must be valid at the moment of attendance submission.
+- Attendance transitions must occur in a valid order.
+- Journal reviews must use permitted status transitions.
+- Final reports must use accepted file formats.
+- Assessments must validate all required criteria and scoring weights.
+- Assessment publication must require successful teacher verification.
+- Users cannot approve documents beyond their permissions.
+- File operations must verify the relevant record ownership and access rights.
+
+Use server-side validation for sensitive transitions.
+
+Maintain appropriate audit history for account approvals, assignment changes, attendance corrections, journal decisions, report approvals, assessment verification, and publication.
+
+Avoid recording unnecessary sensitive information in audit logs.
+
+---
+
+## 11. TESTING AND VERIFICATION
+
+Do not finish implementation after only making the dashboard look correct.
+
+Verify the major application workflows using real Firebase-backed data.
+
+### Required functional tests
+
+1. Register a student and verify the pending approval state.
+2. Approve a student using an authorized administrator account.
+3. Verify that the active student can sign in using the supported authentication methods.
+4. Confirm that unauthorized roles cannot access protected pages.
+5. Confirm that profile changes persist in Firestore.
+6. Upload and retrieve an authorized profile photo.
+7. Upload a CV and verify restricted access.
+8. Create and view an internship schedule.
+9. Generate a dynamic QR attendance session.
+10. Reject an expired or invalid QR token.
+11. Record a valid check-in and check-out.
+12. Prevent duplicate attendance submissions.
+13. Create and submit a daily journal.
+14. Approve a journal and request a journal revision.
+15. Upload and retrieve activity documentation.
+16. Publish and read an announcement.
+17. Upload a final internship report.
+18. Request revisions and approve the final report.
+19. Complete a supervisor assessment.
+20. Return an assessment for correction and verify it again.
+21. Prevent publication before teacher verification.
+22. Generate and download the released assessment PDF.
+23. Verify role-specific dashboards and access limitations.
+24. Test language switching.
+25. Test the desktop, tablet, and mobile layouts.
+26. Test security rules against unauthorized reads and writes.
+27. Verify that data remains available after refresh and a new authenticated session.
+28. Confirm that no production page depends on hardcoded demo metrics.
+
+Use Firebase emulators or other suitable test environments where available. Clearly distinguish test data from real records.
+
+Do not claim that a test passed unless it was actually performed.
+
+If any test cannot be performed because Firebase, GitHub, a browser permission, or another required service has not been configured, clearly identify the limitation.
+
+---
+
+## 12. FINAL UI REVIEW AND IMPLEMENTATION CHECKLIST
+
+Before declaring the project complete, conduct a consistency review.
+
+### Visual review
+
+Compare the rendered application with the supplied Spark Admin screenshot.
+
+Verify:
+
+- Dark-green left sidebar.
+- Matching brand and navigation hierarchy.
+- Light-gray content background.
+- Rounded white cards.
+- Lime-green highlights.
+- Similar desktop proportions and spacing.
+- Consistent topbar.
+- Clear dashboard title and metadata.
+- Cohesive typography and icons.
+- Responsive mobile navigation.
+- Consistent visual styling across all feature pages.
+
+Do not reproduce unrelated sales content. Adapt all content to genuine internship workflows.
+
+### Functional review
+
+Verify:
+
+- All required pages exist.
+- All navigation links resolve correctly.
+- Every important button works.
+- Real authentication is enabled.
+- Firestore persistence works.
+- File uploads use Cloud Storage.
+- Role permissions are enforced.
+- Dynamic QR validation has a trusted backend.
+- Journals have a functional review workflow.
+- Final reports have a functional approval workflow.
+- Assessment PDFs are generated and downloadable.
+- Announcements are functional.
+- Search and filters work.
+- Loading, success, empty, and error states are implemented.
+- Security Rules are included and reviewed.
+- Setup instructions are documented.
+- GitHub integration is ready for authorization and synchronization.
+
+### Final delivery
+
+Produce a working application and a concise implementation summary covering:
+
+1. Features implemented.
+2. Technology stack.
+3. Application structure.
+4. Firebase services successfully connected.
+5. Security Rules created and their verification status.
+6. GitHub connection status.
+7. Tests actually performed.
+8. Any remaining setup steps.
+9. Deployment instructions.
+10. Known limitations.
+
+Clearly distinguish implemented features from features that still require configuration, testing, or authorization.
+
+Do not claim that Firebase is fully configured, the repository is synchronized, or the application is production-ready unless those outcomes have been verified.
+
+---
+
+## EXECUTION INSTRUCTIONS
+
+Begin building the application now.
+
+Prioritize a complete, maintainable, functional implementation over a superficial prototype.
+
+First establish the project structure, shared design system, routing, authentication foundation, Firebase integration, and authorization model.
+
+Then implement the dashboard and all required feature pages, connecting each feature to the appropriate backend operations.
+
+After implementation, inspect the generated code, resolve errors, verify key user workflows, and review the final responsive UI against the supplied reference image.
+
+Use sensible implementation defaults for details that have not been specified. Do not invent business policies or bypass required security controls.
+
+Ask for user input only when a genuine external authorization, project-selection, credential, or business decision is required to proceed.
+
+If user action is required, state exactly what needs to be done and continue with the other implementation work that can be completed safely.
+
+The final result must be a cohesive, working internship management web application called **internship application hafuza**, designed in the visual style of the supplied reference image, with functional Firebase-backed workflows and a maintainable GitHub-ready codebase.
