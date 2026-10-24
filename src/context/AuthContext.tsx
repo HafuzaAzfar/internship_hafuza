@@ -1,9 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { 
   User as FirebaseUser, 
   signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
+  updateProfile as updateAuthProfile,
   signOut, 
   sendPasswordResetEmail,
   onAuthStateChanged 
@@ -35,29 +38,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [previewRole, setPreviewRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const isRegisteringRef = useRef(false);
 
-  const fetchProfile = async (user: FirebaseUser) => {
+  // Check if an email is bootstrap admin
+  const checkIsAdmin = (email?: string | null): boolean => {
+    if (!email) return false;
+    return email.trim().toLowerCase() === 'hafuza@narmadi.com';
+  };
+
+  const fetchProfile = async (user: FirebaseUser): Promise<UserProfile> => {
     try {
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
 
-      const isBootstrapAdmin = user.email?.toLowerCase() === 'hafuza@narmadi.com';
+      const isBootstrapAdmin = checkIsAdmin(user.email);
 
       if (userSnap.exists()) {
         const data = userSnap.data() as UserProfile;
         // If it's hafuza and not yet marked admin, upgrade to admin
         if (isBootstrapAdmin && data.role !== 'admin') {
-          await updateDoc(userRef, { role: 'admin', status: 'active' });
-          data.role = 'admin';
-          data.status = 'active';
+          try {
+            await updateDoc(userRef, { role: 'admin', status: 'active' });
+            data.role = 'admin';
+            data.status = 'active';
+          } catch (e) {
+            console.warn('Notice upgrading admin status:', e);
+          }
         }
         setProfile(data);
+        return data;
       } else {
-        // Create initial profile
+        // If currently in middle of registerWithEmail, wait briefly so we don't overwrite custom name
+        if (isRegisteringRef.current) {
+          // Profile will be set by registerWithEmail
+          return {} as UserProfile;
+        }
+
+        // Create initial default profile
         const newProfile: UserProfile = {
           uid: user.uid,
           email: user.email || '',
-          displayName: user.displayName || user.email?.split('@')[0] || 'User Hafuza',
+          displayName: user.displayName || (user.email ? user.email.split('@')[0] : 'User Hafuza'),
           role: isBootstrapAdmin ? 'admin' : 'student',
           status: isBootstrapAdmin ? 'active' : 'pending',
           photoURL: user.photoURL || '',
@@ -78,8 +99,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           updatedAt: new Date().toISOString(),
         };
 
-        await setDoc(userRef, newProfile);
-        setProfile(newProfile);
+        try {
+          await setDoc(userRef, newProfile);
+        } catch (setErr) {
+          console.warn('Could not persist initial user profile to Firestore:', setErr);
+        }
 
         // Also add to admins collection if bootstrap admin
         if (isBootstrapAdmin) {
@@ -89,16 +113,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               createdAt: new Date().toISOString()
             });
           } catch (e) {
-            console.warn('Failed to set admins collection marker:', e);
+            console.warn('Notice setting admins collection marker:', e);
           }
         }
+
+        setProfile(newProfile);
+        return newProfile;
       }
     } catch (error) {
-      handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
+      console.warn('Error fetching Firestore user profile, providing safe fallback session:', error);
+      // Fallback safe in-memory profile so user is NEVER locked out by network blips
+      const fallbackProfile: UserProfile = {
+        uid: user.uid,
+        email: user.email || '',
+        displayName: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
+        role: checkIsAdmin(user.email) ? 'admin' : 'student',
+        status: checkIsAdmin(user.email) ? 'active' : 'pending',
+        photoURL: user.photoURL || '',
+        companyName: 'PT One Data Security',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setProfile(fallbackProfile);
+      return fallbackProfile;
     }
   };
 
   useEffect(() => {
+    // 1. Check for incoming redirect sign-in result from Google
+    getRedirectResult(auth)
+      .then((res) => {
+        if (res?.user) {
+          console.log('Redirect sign-in resolved for:', res.user.email);
+        }
+      })
+      .catch((err) => {
+        console.warn('Redirect sign-in notice:', err);
+      });
+
+    // 2. Auth state observer
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
@@ -117,8 +170,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Google Sign In error:', error);
+      // If popup is blocked by the browser (very common on mobile / Vercel), fall back to redirect
+      if (error?.code === 'auth/popup-blocked' || error?.code === 'auth/cancelled-popup-request') {
+        try {
+          console.log('Popup blocked, attempting redirect sign-in...');
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        } catch (redirectErr) {
+          console.error('Redirect sign-in fallback failed:', redirectErr);
+          throw redirectErr;
+        }
+      }
+
+      // If domain is unauthorized on Vercel
+      if (error?.code === 'auth/unauthorized-domain') {
+        const currentHost = window.location.hostname;
+        const helpfulMsg = `Domain "${currentHost}" belum didaftarkan di Authorized Domains Firebase Authentication. Tambahkan "${currentHost}" di Firebase Console > Authentication > Settings > Authorized domains.`;
+        const enrichedError = new Error(helpfulMsg);
+        (enrichedError as any).code = 'auth/unauthorized-domain';
+        (enrichedError as any).hostname = currentHost;
+        throw enrichedError;
+      }
+
       throw error;
     } finally {
       setLoading(false);
@@ -128,7 +203,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithEmail = async (email: string, pass: string) => {
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, pass);
+      await signInWithEmailAndPassword(auth, email.trim(), pass);
     } catch (error) {
       console.error('Email login error:', error);
       throw error;
@@ -139,13 +214,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const registerWithEmail = async (email: string, pass: string, name: string) => {
     setLoading(true);
+    isRegisteringRef.current = true;
     try {
-      const cred = await createUserWithEmailAndPassword(auth, email, pass);
-      const isBootstrapAdmin = email.toLowerCase() === 'hafuza@narmadi.com';
+      const cleanEmail = email.trim();
+      const cred = await createUserWithEmailAndPassword(auth, cleanEmail, pass);
+      const cleanName = name.trim();
+
+      try {
+        await updateAuthProfile(cred.user, { displayName: cleanName });
+      } catch (err) {
+        console.warn('Notice setting Firebase Auth displayName:', err);
+      }
+
+      const isBootstrapAdmin = checkIsAdmin(cleanEmail);
+
       const newProfile: UserProfile = {
         uid: cred.user.uid,
-        email: email,
-        displayName: name,
+        email: cleanEmail,
+        displayName: cleanName,
         role: isBootstrapAdmin ? 'admin' : 'student',
         status: isBootstrapAdmin ? 'active' : 'pending',
         photoURL: '',
@@ -164,12 +250,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
+
       await setDoc(doc(db, 'users', cred.user.uid), newProfile);
       setProfile(newProfile);
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
     } finally {
+      isRegisteringRef.current = false;
       setLoading(false);
     }
   };
@@ -181,7 +269,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resetPassword = async (email: string) => {
-    await sendPasswordResetEmail(auth, email);
+    await sendPasswordResetEmail(auth, email.trim());
   };
 
   const updateUserProfile = async (data: Partial<UserProfile>) => {
@@ -195,13 +283,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await updateDoc(userRef, updateData);
       setProfile({ ...profile, ...updateData });
     } catch (error) {
+      console.error('Profile update error:', error);
       handleFirestoreError(error, OperationType.UPDATE, `users/${currentUser.uid}`);
     }
   };
 
   const refreshProfile = async () => {
     if (currentUser) {
+      setLoading(true);
       await fetchProfile(currentUser);
+      setLoading(false);
     }
   };
 

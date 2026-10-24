@@ -71,10 +71,12 @@ function MainAppContent() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [documentations, setDocumentations] = useState<DocumentationItem[]>([]);
 
-  // Seed on boot
+  // Seed initial data only for authenticated admin
   useEffect(() => {
-    checkAndSeedInitialData();
-  }, []);
+    if (currentUser && effectiveRole === 'admin') {
+      checkAndSeedInitialData();
+    }
+  }, [currentUser, effectiveRole]);
 
   // Realtime listeners
   useEffect(() => {

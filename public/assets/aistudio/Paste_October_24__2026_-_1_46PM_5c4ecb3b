@@ -1,0 +1,864 @@
+# MASTER PROMPT — FIX LOGIN, CREATE NEW ACCOUNT, FIREBASE DATA PERSISTENCE, VERCEL DEPLOYMENT, AND FULL UI/UX IMPROVEMENT
+
+## PROJECT INFORMATION
+
+Application name: **internship application hafuza**
+
+Company: PT One Data Security.
+
+Project type: Existing full-stack internship management web application.
+
+Deployment platform: Vercel.
+
+Backend: Firebase Authentication, Cloud Firestore, Firebase Cloud Storage, and the existing trusted backend services where applicable.
+
+Primary language: Bahasa Indonesia.
+
+Secondary language: English.
+
+Main objective: Diagnose and fix production authentication failures, implement a complete email/password registration flow, ensure user accounts and data persist correctly in Firebase, and improve the UI/UX across every existing page.
+
+## ABSOLUTE REQUIREMENTS
+
+This is an existing application that needs debugging and improvement.
+
+Do not create a new project, replace the current repository, reset the Firebase project, delete existing user data, or rebuild the entire application unnecessarily.
+
+Inspect the existing source code, current Firebase configuration, database schema, routing system, authentication methods, environment variables, and deployment configuration before modifying anything.
+
+Implement actual code changes in the current project. Do not merely provide suggestions, mockups, or illustrative code.
+
+Preserve the existing application features, including:
+
+- Dashboard.
+- Jadwal Magang.
+- Presensi Digital.
+- Jurnal Harian.
+- Dokumentasi Kegiatan.
+- Penilaian & Evaluasi.
+- Laporan Akhir Magang.
+- Pengumuman.
+- Profil Saya.
+- Role-specific interfaces for students, company supervisors, teachers, and administrators.
+- Existing Firebase data and relationships.
+- Existing visual identity and navigation structure.
+
+Where direct access to Firebase Console, Vercel settings, or external accounts is unavailable, identify the required configuration precisely. Never claim an external change or successful production test that has not actually occurred.
+
+---
+
+# PART 1 — FIX THE PRODUCTION LOGIN FAILURES
+
+## 1. Problems to investigate
+
+The deployed Vercel website currently experiences the following problems:
+
+1. Google Sign-In fails when the login button is clicked.
+2. Email/password login also fails.
+3. Users cannot reliably enter the website.
+4. User data and profile information are not always saved correctly.
+5. Authentication and persistence may behave differently between development and production.
+
+Investigate each problem independently. Do not assume that all failures share the same root cause.
+
+Determine whether the cause involves:
+
+- Incorrect Firebase project configuration.
+- Missing or incorrect Vercel environment variables.
+- Unauthorized production domain.
+- Google provider configuration.
+- Incorrect email/password authentication implementation.
+- Incorrect Firebase initialization.
+- Duplicate Firebase application instances.
+- Misconfigured Firestore Security Rules.
+- Incorrect collection names or document paths.
+- Invalid database write logic.
+- Incorrect authentication state handling.
+- Asynchronous operations that are not awaited.
+- Missing or inconsistent user profile documents.
+- Production build or runtime errors.
+- Other identifiable application defects.
+
+Use the actual source code, available logs, browser errors, network responses, and Firebase configuration to establish the root cause.
+
+Do not replace one broken implementation with another incomplete implementation merely to make the login page appear functional.
+
+## 2. Audit Firebase initialization
+
+Inspect every Firebase-related module and ensure that:
+
+- The intended Firebase project is used consistently.
+- Firebase configuration is initialized correctly.
+- Firebase Authentication uses the correct Auth instance.
+- Cloud Firestore uses the correct database instance.
+- Cloud Storage uses the correct storage bucket.
+- All relevant components import the same configured Firebase services.
+- Multiple Firebase app instances are not created accidentally.
+- Local and production environments use the correct configuration.
+- Missing configuration produces a clear diagnostic instead of a silent failure.
+
+Use the existing Firebase project and preserve its data.
+
+Do not switch to a new Firebase project unless explicitly authorized.
+
+Avoid duplicating initialization code across unrelated components.
+
+---
+
+# PART 2 — COMPLETE EMAIL/PASSWORD REGISTRATION SYSTEM
+
+## 3. Add a new account registration option on the login page
+
+The login page must include two clearly visible actions:
+
+1. **Login dengan Google**
+2. **Login dengan Email**
+
+The page must also provide a prominent option:
+
+**Belum punya akun? Daftar sekarang**
+
+Clicking Daftar sekarang must open a dedicated registration page or a well-designed registration panel within the authentication interface.
+
+Users must be able to create their own accounts using an email address and password they choose themselves.
+
+Registration must not depend on an administrator creating the Authentication account beforehand.
+
+Do not restrict registration to a list of pre-created student email addresses unless such a restriction already exists as an explicit business requirement.
+
+The only required registration prerequisites should be legitimate validation rules and the application's account approval policy.
+
+### Registration form
+
+Create a form containing:
+
+- Nama lengkap.
+- Email.
+- Password.
+- Konfirmasi password.
+- Checkbox to acknowledge the applicable terms and privacy notice, if configured.
+- Optional password visibility toggle.
+
+Provide a clear primary action:
+
+**Daftar Akun**
+
+Also provide:
+
+**Sudah punya akun? Login**
+
+The registration page must use the application's established design language and be comfortable to use on desktop, tablet, and mobile.
+
+### Input validation
+
+Implement appropriate validation:
+
+- Name cannot be empty.
+- Email must use a valid format.
+- Password must meet Firebase's configured password requirements.
+- Confirmation password must match the password.
+- Duplicate registered email addresses must be handled correctly.
+- Invalid submissions must show useful error messages.
+- Repeated submissions must not create duplicate profile documents.
+- Password fields must never be displayed in plaintext unless the user explicitly enables visibility.
+
+Do not invent an account or pretend registration succeeded if Firebase rejects the request.
+
+---
+
+## 4. Register new accounts through Firebase Authentication
+
+Implement real email/password registration using the Firebase Authentication APIs compatible with the existing application.
+
+For example, when using the Firebase modular Web SDK, use the appropriate `createUserWithEmailAndPassword` flow.
+
+The implementation must:
+
+1. Validate the registration form.
+2. Call Firebase Authentication to create the account.
+3. Obtain the new authenticated user's UID.
+4. Create the corresponding user profile in Cloud Firestore.
+5. Assign the correct initial role and account status.
+6. Store permitted profile information.
+7. Handle any required verification flow.
+8. Show a success state only when the relevant operations have succeeded.
+9. Route the user to the appropriate next screen.
+
+Use the Firebase Authentication UID as the canonical user identifier.
+
+Do not store passwords or password hashes manually in Firestore.
+
+Do not save passwords in localStorage, sessionStorage, browser cookies created by custom application code, or application logs.
+
+Never use a user-provided role value as an authorization decision.
+
+### Default role and approval status
+
+For a newly registered student, the account profile should have a secure default role:
+
+`student`
+
+The initial account status should follow the existing approval workflow, preferably:
+
+`pending`
+
+if administrator approval is required by the current application.
+
+New students must not be able to assign themselves administrator, company supervisor, or teacher privileges.
+
+Do not make a newly registered student an active approved account simply because Firebase Authentication successfully created their account.
+
+Keep Authentication status and application approval status separate.
+
+If the current system requires administrator approval, show a dedicated Pending Approval screen after registration and login. Explain clearly that the account exists but access to restricted internship features will remain unavailable until approval.
+
+The student should still be able to sign out and sign back in using the same registered email and password.
+
+---
+
+# PART 3 — SYNCHRONIZE AUTHENTICATION WITH FIRESTORE
+
+## 5. User profile creation and persistence
+
+A successfully created Authentication account must have a corresponding Firestore profile.
+
+Use the existing user profile collection if one already exists. If the current collection is named `users`, preserve that convention.
+
+A profile may contain fields equivalent to:
+
+- `uid`
+- `fullName`
+- `email`
+- `role`
+- `accountStatus`
+- `createdAt`
+- `updatedAt`
+- `emailVerified`
+- `preferredLanguage`
+- `profilePhoto`
+- `class`
+- `placeOfBirth`
+- `dateOfBirth`
+- `major`
+- `companyId`
+- `internshipStartDate`
+- `internshipEndDate`
+- `supervisorUid`
+- `teacherUid`
+
+Create only the fields that are actually needed and supported by the existing schema.
+
+For new students, assign the student role and pending approval status in a way that cannot be overridden by an untrusted registration form.
+
+Do not assume that an email address alone is sufficient to establish administrative authority.
+
+Do not overwrite existing populated profile fields with empty strings or default values during login.
+
+### Authentication and profile consistency
+
+Implement the following logic:
+
+**New user registration**
+
+- Create Authentication account.
+- Create the user profile.
+- Apply the approved default role and account status.
+- Handle partial failure.
+- Display the correct next step.
+
+**Existing user login**
+
+- Authenticate the user.
+- Retrieve the existing profile.
+- Preserve the profile and existing assignments.
+- Verify the account status.
+- Route the user appropriately.
+
+**Existing authenticated user with a missing profile**
+
+- Detect the missing document.
+- Attempt only safe profile recovery using trusted data and approved defaults.
+- Never overwrite an existing profile.
+- Never grant an elevated role.
+- If recovery cannot be completed securely, display a clear error and provide a controlled recovery path.
+
+**Profile write failure after successful Authentication registration**
+
+- Do not claim the entire registration process is complete.
+- Preserve the Authentication account.
+- Display an appropriate status or recovery message.
+- Provide a safe way to retry or complete profile initialization.
+- Avoid creating duplicate Authentication accounts or Firestore documents.
+- Make recovery idempotent where possible.
+
+Implement appropriate error handling for partial failures between Authentication and Firestore.
+
+Do not attempt to create an unrelated account simply because an existing user has a profile write failure.
+
+---
+
+# PART 4 — MAKE LOGIN AND REGISTRATION WORK IN PRODUCTION
+
+## 6. Email/password login
+
+Fix the existing login flow so that registered users can sign back in using their original credentials.
+
+Use the appropriate Firebase Authentication login API, such as `signInWithEmailAndPassword` for the modular Firebase Web SDK.
+
+Ensure that:
+
+- The email and password are submitted correctly.
+- Authentication failures are handled properly.
+- Successful login retrieves the user's existing Firestore profile.
+- Existing profile data is not recreated unnecessarily.
+- Existing assignments and roles remain intact.
+- Pending users are routed to the approval screen.
+- Active students are routed to the student dashboard.
+- Supervisors, teachers, and administrators are routed to their authorized dashboards.
+- Suspended or rejected users receive the appropriate access restriction.
+- Refreshing the browser does not unnecessarily end an authenticated session.
+- Logout actually signs the user out.
+
+Use a consistent authentication state listener and loading state.
+
+Do not route users to a protected page while Firebase is still initializing.
+
+Do not display a successful login notification before authentication and the required profile checks finish.
+
+### Clear error messages
+
+Map actual Firebase error codes to understandable messages in Bahasa Indonesia and English.
+
+Examples include:
+
+- Email atau password tidak sesuai.
+- Email sudah terdaftar.
+- Format email tidak valid.
+- Password belum memenuhi ketentuan.
+- Login dibatalkan.
+- Domain website belum diizinkan.
+- Akun belum disetujui administrator.
+- Akun dinonaktifkan.
+- Koneksi bermasalah.
+- Profil pengguna gagal dimuat.
+
+These are examples. Only display the message that matches the actual failure.
+
+Do not expose sensitive tokens, credentials, internal secrets, or unnecessary backend stack traces.
+
+---
+
+## 7. Google Sign-In
+
+Investigate and fix the existing Google authentication flow without removing it.
+
+Verify:
+
+- Google provider is enabled in Firebase Authentication.
+- The correct Firebase project is configured.
+- The deployed Vercel hostname is in Firebase Authentication's authorized domains.
+- The OAuth flow uses the correct supported Firebase method.
+- Google accounts can be registered or authenticated as intended.
+- Returning Google users preserve their existing profiles.
+- New Google users receive the appropriate initial profile and approval status.
+- A canceled popup is handled without breaking the interface.
+- Popup and redirect errors are handled correctly.
+- Browser refreshes do not cause redirect loops.
+- Authentication state is restored correctly.
+
+Check Firebase Authentication's Authorized domains configuration for the actual production hostname, including the relevant `vercel.app` hostname.
+
+Do not assume that localhost is automatically authorized for production authentication.
+
+If using popup-based sign-in, handle popup blocking and provider errors.
+
+If using redirect-based sign-in, correctly process the redirect result and restore the session.
+
+Do not hardcode localhost as a redirect target for production.
+
+If the Google authentication flow requires manual console configuration, explain precisely what must be enabled or added. Do not claim that the production domain has been authorized unless verification confirms it.
+
+---
+
+# PART 5 — VERCEL ENVIRONMENT AND FIREBASE DEPLOYMENT AUDIT
+
+## 8. Production environment variables
+
+Inspect all variables used for Firebase initialization and other required application services.
+
+Check the existing framework and expected naming conventions before changing anything.
+
+Verify consistency between:
+
+- Local development.
+- Vercel Preview.
+- Vercel Production.
+- Firebase project configuration.
+- Storage bucket configuration.
+- Backend runtime configuration.
+
+Check for missing, misspelled, outdated, or improperly scoped environment variables.
+
+Do not blindly rename environment variables to framework-specific prefixes without inspecting the current build system.
+
+Use browser-accessible Firebase configuration only in the intended client configuration mechanism.
+
+Keep privileged credentials and Firebase Admin SDK secrets exclusively on the trusted server side.
+
+Never commit actual secret values to GitHub.
+
+When configuration is missing, provide the exact variable name and indicate where it belongs in Vercel.
+
+Do not invent values for unknown secrets.
+
+Confirm whether a new Vercel deployment is required after configuration changes.
+
+## 9. Investigate production-only failures
+
+Inspect the existing Vercel build and application behavior.
+
+Check:
+
+- Production build errors.
+- Runtime logs.
+- Browser console errors.
+- Failed network requests.
+- Firebase Authentication error codes.
+- Firestore permission denials.
+- Invalid Firestore paths.
+- Incorrect environment variables.
+- Wrong project IDs.
+- Storage bucket mismatches.
+- Duplicate Firebase initialization.
+- Incorrect routing behavior.
+- Missing dependencies.
+- Incorrect imports and filename capitalization.
+- Incorrect server/client code boundaries.
+- Session restoration issues.
+
+Do not assume a successful local development build means production login will work.
+
+Determine which issues can be fixed in the code and which require external service configuration.
+
+If deployed browser access or production logs are unavailable, explicitly identify which diagnostics remain unverified.
+
+---
+
+# PART 6 — PERSISTENT DATABASE AND FILE OPERATIONS
+
+## 10. Audit all data persistence
+
+Login and registration are the highest priority, but inspect data persistence throughout the existing application.
+
+Verify that the following modules use real backend data:
+
+- User profiles.
+- Internship schedules.
+- Digital attendance.
+- Daily journals.
+- Activity documentation.
+- Performance assessments.
+- Final internship reports.
+- Announcements.
+- Notifications.
+- Language preferences.
+
+For each module, inspect the actual create, read, update, and delete operations.
+
+Confirm that:
+
+- Correct Firebase documents are targeted.
+- Authenticated UID references are correct.
+- Updates do not overwrite unrelated fields.
+- Form submissions await the actual database operations.
+- Successful writes remain after refresh.
+- Errors are not silently swallowed.
+- Duplicate submissions are handled appropriately.
+- Dashboard values are based on persisted records.
+- Unauthorized users cannot access protected records.
+
+Never substitute browser state or in-memory arrays for persistent production data.
+
+Local state may be used for the immediate interface, but it must reflect the actual persisted backend state.
+
+### Firestore Security Rules
+
+Review the existing Security Rules and identify any rule that blocks legitimate operations.
+
+Correct the specific authorization issue while preserving the intended security boundaries.
+
+Do not make all collections readable or writable to every authenticated user.
+
+Preserve these restrictions:
+
+- Students cannot modify their own role.
+- Students cannot approve their own accounts.
+- Students cannot access other students' private records without permission.
+- Supervisors can access records only for students within their authorized assignments.
+- Teachers can access records within their academic assignments.
+- Administrators have the intended administrative permissions.
+- Sensitive approval and publication actions cannot be forged by the frontend.
+
+Use trusted backend validation for operations that require privileged authority.
+
+### Firebase Cloud Storage
+
+If the application supports file uploads, ensure that file operations remain functional and private.
+
+Inspect:
+
+- Storage bucket configuration.
+- Upload paths.
+- File metadata.
+- Ownership and authorization.
+- Upload completion handling.
+- Restricted download access.
+- Deletion consistency.
+
+Do not make private CVs, journal attachments, activity documentation, reports, and assessments public merely to bypass permission problems.
+
+---
+
+# PART 7 — LOGIN AND REGISTRATION UI/UX
+
+## 11. Design objectives
+
+Improve the authentication interface while maintaining the visual identity of internship application hafuza.
+
+Use the existing design system:
+
+- Dark-green primary identity.
+- Lime-green accents.
+- Very light gray backgrounds.
+- White surfaces and rounded cards.
+- Modern, readable typography.
+- Consistent spacing.
+- Subtle borders and shadows.
+- Clear error and success states.
+
+Do not introduce a completely unrelated color palette.
+
+### Login page
+
+The login page must contain:
+
+- Application branding.
+- A concise welcome heading.
+- Email field.
+- Password field.
+- Password visibility toggle.
+- Remember-session behavior consistent with Firebase's supported session persistence.
+- Forgot password link.
+- Login button.
+- Google Sign-In button.
+- Link to create a new account.
+- Clear error messages.
+- Loading state during login.
+
+Suggested Indonesian content:
+
+**Selamat Datang Kembali**
+
+"Masuk untuk melanjutkan aktivitas magang Anda di PT One Data Security."
+
+Primary button: **Masuk**
+
+Google button: **Masuk dengan Google**
+
+Registration link: **Belum punya akun? Daftar sekarang**
+
+Use proper capitalization, spacing, icon alignment, and button hierarchy.
+
+### Registration page
+
+Build a visually consistent registration page with:
+
+**Buat Akun Baru**
+
+"Daftarkan akun Anda untuk mulai menggunakan internship application hafuza."
+
+Required fields:
+
+- Nama lengkap.
+- Email.
+- Password.
+- Konfirmasi password.
+
+Primary button: **Daftar Akun**
+
+Secondary link: **Sudah punya akun? Login**
+
+Display password requirements clearly and provide inline validation.
+
+On successful account creation, display an appropriate completion or pending-approval screen instead of blindly redirecting to the dashboard.
+
+### Authentication UX states
+
+Implement:
+
+- Initial authentication loading.
+- Form submission loading.
+- Inline validation errors.
+- Clear Firebase error mapping.
+- Success feedback.
+- Password visibility control.
+- Disabled submission while processing.
+- Duplicate submission prevention.
+- Keyboard navigation.
+- Accessible field labels.
+- Responsive layout.
+
+Do not display fabricated success messages.
+
+---
+
+# PART 8 — COMPLETE UI/UX CLEANUP ACROSS ALL MENUS
+
+## 12. Audit every existing page
+
+After correcting the critical authentication and persistence issues, perform a thorough UI/UX review of every existing route and tab.
+
+Include:
+
+1. Login.
+2. Registration.
+3. Dashboard.
+4. Jadwal Magang.
+5. Presensi Digital.
+6. Jurnal Harian.
+7. Dokumentasi Kegiatan.
+8. Penilaian & Evaluasi.
+9. Laporan Akhir Magang.
+10. Pengumuman.
+11. Profil Saya.
+12. Supervisor pages.
+13. Teacher pages.
+14. Administrator pages.
+15. Account settings, dropdowns, dialogs, and secondary screens.
+
+Do not focus only on the dashboard.
+
+Preserve each page's current business logic and database integration.
+
+### Shared layout
+
+Standardize:
+
+- Sidebar width and behavior.
+- Active navigation item.
+- Menu spacing.
+- Header alignment.
+- Page titles and subtitles.
+- Breadcrumbs where useful.
+- Card dimensions.
+- Typography.
+- Button sizes.
+- Form controls.
+- Tables.
+- Status indicators.
+- Dialogs.
+- Notifications.
+- Empty states.
+- Loading skeletons.
+
+All pages should feel like one coherent professional web application.
+
+### Dashboard
+
+Improve the layout, spacing, summary cards, charts, recent activity panels, and upcoming schedule cards.
+
+Keep the metrics tied to real Firestore data.
+
+Do not introduce hardcoded production statistics or fabricated notifications.
+
+### Tables and forms
+
+Improve readability, row spacing, alignment, pagination, search fields, filters, and action menus.
+
+Improve form labels, field spacing, validation, error handling, and button placement.
+
+On mobile, transform tables into suitable responsive cards or use controlled horizontal scrolling.
+
+Do not hide essential information simply to reduce layout width.
+
+### Responsive design
+
+Test representative viewport sizes:
+
+- 360–390 px mobile.
+- 430 px mobile.
+- 768 px tablet.
+- 1280 px laptop.
+- 1440 px or wider desktop.
+
+Fix:
+
+- Horizontal overflow.
+- Clipped dropdowns.
+- Oversized cards.
+- Unreadable labels.
+- Misaligned icons.
+- Broken modals.
+- Unusable mobile forms.
+- Sidebar overlap.
+- Inconsistent spacing.
+- Difficult-to-tap controls.
+
+Maintain clear visual hierarchy at each breakpoint.
+
+### Accessibility and consistency
+
+Ensure:
+
+- Readable text contrast.
+- Visible keyboard focus.
+- Proper form labels.
+- Accessible icon buttons.
+- Clear validation feedback.
+- Status indicators that do not rely on color alone.
+- Consistent Bahasa Indonesia and English translations.
+- Reasonable reduced-motion behavior.
+
+Do not introduce unnecessary animation or decorative elements.
+
+Keep the application clean, comfortable to use, and professionally polished.
+
+---
+
+# PART 9 — REQUIRED TESTING
+
+## 13. Registration tests
+
+Test the complete new account flow:
+
+1. Open the login page.
+2. Click Daftar sekarang.
+3. Enter a new full name, email, password, and confirmation password.
+4. Submit the form.
+5. Verify that Firebase Authentication creates the account.
+6. Verify that the corresponding Firestore profile is created.
+7. Verify that the initial role is student.
+8. Verify that the approval status follows the existing policy.
+9. Verify that the password is not stored in Firestore.
+10. Refresh the page and confirm that the persisted profile remains available.
+11. Log out.
+12. Return to the login page.
+13. Enter the same email and password.
+14. Verify successful Authentication login.
+15. Verify that the existing profile loads without duplicate creation.
+16. Verify that protected access respects account approval status.
+
+Also test invalid passwords, mismatched confirmation passwords, duplicate email registration, and network failures.
+
+## 14. Google login tests
+
+When valid external configuration is available, test:
+
+- New Google user registration.
+- Existing Google user login.
+- Profile creation and retrieval.
+- Pending approval handling.
+- Authorized production domain.
+- Popup or redirect behavior.
+- Canceled login.
+- Error handling.
+- Session restoration.
+
+Do not claim that Google Sign-In is fixed in production without actually verifying it.
+
+## 15. Data persistence tests
+
+Test:
+
+- Profile creation and updates.
+- Existing-user login without overwriting profile data.
+- Firestore read/write behavior.
+- File upload and metadata.
+- Journal creation.
+- Schedule retrieval.
+- Assessment and report retrieval.
+- Database rule enforcement.
+- Page refresh persistence.
+- Session restoration.
+
+Verify the actual backend records rather than relying only on the displayed interface.
+
+## 16. UI/UX regression tests
+
+Verify:
+
+- All existing navigation items.
+- Every page route.
+- Login and registration flows.
+- Protected routes.
+- Forms and validation.
+- Buttons and dropdowns.
+- Search and filters.
+- Responsive card layouts.
+- Responsive tables.
+- Mobile sidebar.
+- Dialogs.
+- Loading, empty, and error states.
+
+Ensure that the visual refinements do not break existing application functionality.
+
+## 17. Build and deployment verification
+
+Run the available lint checks, type checks, automated tests, and production build.
+
+Resolve errors introduced by the changes.
+
+If deployment access exists, deploy through the intended authorized workflow and verify the actual result.
+
+If access does not exist, provide precise instructions for the required deployment and external configuration steps.
+
+Clearly distinguish:
+
+- Implemented.
+- Tested locally.
+- Tested in preview.
+- Verified in production.
+- Blocked by missing configuration.
+
+Never label a feature complete merely because its code was generated.
+
+---
+
+# PART 10 — FINAL DELIVERABLE
+
+When the implementation is complete, provide a report describing:
+
+1. Root causes of the original login failures.
+2. Fixes made to Google Sign-In.
+3. Fixes made to email/password login.
+4. Registration flow implemented.
+5. Firebase Authentication status.
+6. Firestore profile creation and persistence status.
+7. Vercel configuration requirements.
+8. Security Rules changes.
+9. UI/UX changes across existing pages.
+10. Tests actually performed.
+11. Production deployment verification status.
+12. Remaining manual steps or unresolved issues.
+
+Do not invent findings or claim that external settings were changed without verification.
+
+If a problem remains unresolved, explain the exact issue, the evidence available, and the action needed to finish it.
+
+## EXECUTION COMMAND
+
+Start by inspecting the existing codebase and diagnosing the deployed login and data persistence failures.
+
+Fix authentication and database persistence first.
+
+Implement the email/password registration feature so new users can create their own accounts without requiring administrators to pre-create their Firebase Authentication accounts.
+
+Ensure that registration creates a persistent Authentication account and corresponding Firestore profile, applies the correct default student role and approval status, and allows the user to sign in again using the same email and password.
+
+Then perform the complete UI/UX refinement across all existing application menus.
+
+Preserve the existing Firebase project, application data, repository history, role permissions, and business workflows.
+
+Make actual code changes, run the available tests, fix regressions, and document every external configuration step that still requires user action.
+
+**The final result must be a working authentication and registration system with persistent Firebase-backed user data, a reliable production configuration for Vercel, and a consistent, responsive, professional UI/UX throughout internship application hafuza.**

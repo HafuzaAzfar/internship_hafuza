@@ -18,7 +18,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return isSignedIn() && (
-        request.auth.token.email == "hafuza@narmadi.com" ||
+        request.auth.token.email.matches('(?i)^hafuza@narmadi\\.com$') ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin")
@@ -50,10 +50,19 @@ service cloud.firestore {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
       allow create: if isSignedIn() && (
-        isOwner(userId) || isAdmin()
+        isAdmin() ||
+        (isOwner(userId) && (
+          request.auth.token.email.matches('(?i)^hafuza@narmadi\\.com$') ||
+          (request.resource.data.role == 'student' && request.resource.data.status == 'pending')
+        ))
       );
       allow update: if isSignedIn() && (
-        isOwner(userId) || isAdmin() || isStaff()
+        isAdmin() || isStaff() || (
+          isOwner(userId) &&
+          // Students cannot self-elevate role or status
+          request.resource.data.role == resource.data.role &&
+          request.resource.data.status == resource.data.status
+        )
       );
       allow delete: if isAdmin();
     }
@@ -108,7 +117,9 @@ service cloud.firestore {
     // Final reports
     match /finalReports/{reportId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && (
+        request.auth.uid == reportId || request.auth.uid == request.resource.data.studentId || isAdmin()
+      );
       allow update: if isSignedIn() && (
         request.auth.uid == resource.data.studentId || isStaff() || isAdmin()
       );

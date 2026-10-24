@@ -1,5 +1,5 @@
 import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
-import { db } from './config';
+import { db, auth } from './config';
 import { ScheduleItem, AnnouncementItem, RubricCriterion } from '../types';
 
 export const DEFAULT_RUBRIC_CRITERIA: RubricCriterion[] = [
@@ -14,6 +14,10 @@ export const DEFAULT_RUBRIC_CRITERIA: RubricCriterion[] = [
 ];
 
 export async function checkAndSeedInitialData() {
+  // Only attempt seeding when user is authenticated to prevent permission-denied noise on login screen
+  if (!auth.currentUser) {
+    return;
+  }
   try {
     const annSnap = await getDocs(collection(db, 'announcements'));
     if (annSnap.empty) {

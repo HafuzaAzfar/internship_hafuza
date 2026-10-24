@@ -1,0 +1,916 @@
+# MASTER PROMPT — FIX PRODUCTION AUTHENTICATION, FIREBASE DATA PERSISTENCE, AND COMPLETE UI/UX REFINEMENT
+
+## PROJECT CONTEXT
+
+Project name: **internship application hafuza**
+
+Application URL: The existing application deployed to Vercel.
+
+Company: PT One Data Security.
+
+Current technology: Use the actual framework, Firebase project, backend architecture, and dependencies already present in the repository.
+
+This task has two major objectives:
+
+1. Diagnose and fix all authentication and data persistence failures occurring on the deployed Vercel production website.
+2. Audit and improve the UI/UX of every existing application page so the entire website looks professional, consistent, accessible, and comfortable to use on desktop, tablet, and mobile devices.
+
+**IMPORTANT: This is an existing application that needs debugging and refinement, not a new project.**
+
+Do not rebuild the application from scratch, change its Firebase project without authorization, remove existing features, or replace real functionality with mock data.
+
+Inspect the current source code and deployment configuration before making changes. Identify the underlying causes of the reported problems, implement appropriate fixes, and verify the results with actual tests.
+
+Do not merely describe the potential fixes. Modify the actual application code and configuration where the available environment permits.
+
+If a required external configuration must be changed manually in Firebase Console or Vercel, explain the exact action required. Never claim that an external configuration has been changed when it has not.
+
+---
+
+# PART 1 — CRITICAL PRODUCTION AUTHENTICATION BUGS
+
+## 1. Current problems
+
+The application works differently when deployed to Vercel.
+
+When users visit the deployed website:
+
+- Clicking "Continue with Google" or the Google login button produces an error.
+- Logging in with an email address and password also fails.
+- Users cannot reliably enter the application.
+- Some user data or profile changes are not saved properly.
+- Authentication or database behavior may differ between local development and the deployed production version.
+
+Do not assume that all these symptoms have the same cause.
+
+Investigate the actual application code, Firebase configuration, browser console, network responses, deployment environment, and Firebase Console settings where accessible.
+
+Determine the root cause of each failure before applying fixes.
+
+## 2. Audit the existing authentication implementation
+
+Inspect all files involved in:
+
+- Firebase initialization.
+- Firebase Authentication.
+- Google Sign-In.
+- Email/password login.
+- Account registration.
+- Password reset.
+- Authentication state observation.
+- Protected routes.
+- Session persistence.
+- User profile creation and retrieval.
+- Role-based authorization.
+- Cloud Firestore reads and writes.
+- Cloud Storage uploads if applicable.
+- Logout.
+- Production environment configuration.
+
+Verify that the application initializes Firebase consistently and does not accidentally create multiple Firebase app instances.
+
+Check whether different modules initialize Firebase independently or import inconsistent configurations.
+
+Ensure every authentication component uses the same correctly initialized Firebase application and appropriate Auth instance.
+
+Do not introduce duplicate initialization or conflicting authentication state listeners.
+
+## 3. Fix Google Sign-In for the Vercel deployment
+
+Investigate and correct the complete Google authentication flow.
+
+### A. Firebase Authentication configuration
+
+Verify that:
+
+- Google Sign-In is enabled in Firebase Authentication.
+- The Firebase project ID matches the intended production project.
+- The Firebase Authentication instance uses the correct configuration.
+- The deployed Vercel hostname is authorized in Firebase Authentication.
+- The appropriate OAuth configuration is valid.
+- The application handles successful authentication and authentication errors correctly.
+
+Check Firebase Authentication's Authorized domains configuration.
+
+The production hostname, including the appropriate `vercel.app` domain used by the application, must be authorized.
+
+Do not assume that authorizing localhost automatically authorizes the deployed website.
+
+If the site uses multiple legitimate production domains or a custom domain, ensure that the correct domains are configured without authorizing unrelated domains.
+
+### B. OAuth and redirect handling
+
+Inspect the existing Google authentication implementation.
+
+Use the appropriate Firebase Authentication method based on the application's current framework and deployment environment.
+
+If using popup-based authentication, correctly handle:
+
+- Popup blocking.
+- User cancellation.
+- Provider configuration errors.
+- Unauthorized domains.
+- Network failures.
+- Existing authenticated sessions.
+- Unsupported browser behavior.
+
+If using redirect-based authentication, ensure that the redirect result is handled correctly after the browser returns to the application.
+
+Do not initiate a new redirect loop every time the page renders.
+
+Ensure authentication state is restored correctly after a successful redirect.
+
+If third-party storage or browser privacy restrictions affect the selected authentication approach, investigate the actual issue and choose an appropriate supported solution.
+
+Do not silently switch to a different authentication provider or a fake login mechanism.
+
+### C. Production hostname validation
+
+Do not hardcode localhost as the production redirect destination.
+
+Do not construct OAuth callback or redirect URLs using arbitrary client input.
+
+Use the real Firebase Authentication domain configuration and approved application hostnames.
+
+Preserve the existing production URL and do not deploy to a different domain without authorization.
+
+## 4. Fix email/password authentication
+
+Investigate both account creation and login.
+
+Verify that:
+
+- Email/password authentication is enabled in Firebase Authentication.
+- The login form calls Firebase Authentication correctly.
+- Email and password values are validated.
+- Authentication failures are caught and handled.
+- The application distinguishes invalid credentials, disabled accounts, network failures, and other relevant errors.
+- Passwords are never stored directly in Firestore or browser storage.
+- Registration does not create duplicate user profiles unnecessarily.
+- Existing authenticated accounts can log in without creating duplicate user records.
+- Password-reset functionality uses the correct authenticated Firebase configuration.
+- Email verification requirements, if enabled, are handled consistently.
+
+Use Firebase Authentication's actual account system.
+
+Do not create a parallel custom password database.
+
+Do not bypass authentication checks to make login appear successful.
+
+### Error handling
+
+Replace generic or silent failures with understandable messages.
+
+For example:
+
+- "Email atau password tidak sesuai."
+- "Akun belum diverifikasi atau belum disetujui."
+- "Login dibatalkan."
+- "Domain belum diizinkan untuk login Google."
+- "Terjadi masalah koneksi. Silakan coba kembali."
+- "Layanan autentikasi belum dikonfigurasi dengan benar."
+
+Use these messages only when the corresponding condition is actually identified. Avoid falsely telling a user that their credentials are wrong when the real problem is Firebase configuration.
+
+Provide a safe retry mechanism when appropriate.
+
+Do not expose internal secrets, sensitive authentication tokens, or detailed backend traces in user-facing messages.
+
+## 5. Fix authentication state and protected routes
+
+Ensure that authenticated users remain logged in when navigating between pages or refreshing the browser, according to the intended Firebase session persistence behavior.
+
+Audit the use of:
+
+- Firebase `onAuthStateChanged` or equivalent authentication listeners.
+- Loading states during authentication initialization.
+- Route guards.
+- Dashboard redirects.
+- Role-based navigation.
+- Session restoration.
+- Login/logout race conditions.
+
+Do not redirect a user to the login page while Firebase is still initializing.
+
+Do not render protected pages using an assumed user object before the real authentication state is known.
+
+Use a proper loading state while the application determines:
+
+1. Whether a valid authentication session exists.
+2. Whether the user profile can be loaded.
+3. Whether the user's account is active.
+4. Which role-specific pages the user may access.
+
+Once these checks finish, route the user appropriately.
+
+Users whose accounts are pending, rejected, suspended, or otherwise restricted must see the appropriate state rather than being treated as active users.
+
+Preserve all existing role-based access rules for students, company supervisors, teachers, and administrators.
+
+---
+
+# PART 2 — FIX FIREBASE DATA PERSISTENCE
+
+## 6. Audit all database write operations
+
+The user reports that data is not being saved correctly.
+
+Do not assume this is merely a login problem.
+
+Audit the actual data flow for all existing modules, including:
+
+- User registration and profiles.
+- Internship schedules.
+- Digital attendance.
+- Daily journals.
+- Activity documentation.
+- Assessments and evaluations.
+- Final internship reports.
+- Announcements.
+- Notifications.
+- User preferences and language settings.
+
+For each feature, identify:
+
+1. The frontend component that submits the data.
+2. The service or repository that performs the operation.
+3. The Firebase collection or storage path involved.
+4. The authentication and authorization requirements.
+5. The success and failure handling.
+6. Whether the data is actually persisted.
+7. Whether the saved data can be retrieved after refresh or a new session.
+
+Implement fixes based on the existing schema and application behavior.
+
+Do not unnecessarily rename collections, replace document IDs, migrate unrelated data, or change the Firebase project.
+
+## 7. User profile synchronization
+
+Ensure the application correctly handles the relationship between Firebase Authentication users and Firestore user profiles.
+
+Use the authenticated user's Firebase UID as the canonical identity reference.
+
+When a user registers for the first time:
+
+1. Create the Authentication account.
+2. Create the corresponding Firestore profile using the authenticated UID.
+3. Save the required profile information.
+4. Apply the expected pending or active account status.
+5. Handle partial failures and retries safely.
+
+Do not give a newly registered student active access when administrative approval is required.
+
+If Authentication succeeds but the Firestore profile write fails, handle the failure transparently.
+
+Provide a safe mechanism to recover or complete the missing profile without creating a duplicate Authentication account.
+
+For existing users, preserve their profile and avoid overwriting populated fields with empty or default values.
+
+Do not recreate user profiles unnecessarily every time a user logs in with Google.
+
+Make the profile creation process idempotent where possible.
+
+## 8. Firestore CRUD operations and consistency
+
+Inspect the existing Create, Read, Update, and Delete operations throughout the application.
+
+Verify that:
+
+- Create operations write to the correct collection.
+- Read operations query the correct documents.
+- Update operations target the correct document IDs.
+- Delete operations respect the intended authorization and data-retention rules.
+- Form submissions await asynchronous database operations.
+- Errors are propagated and displayed correctly.
+- Duplicate submissions are handled appropriately.
+- Successful writes update the UI consistently.
+- Refreshing the page does not erase persisted information.
+- Changes are visible to authorized users through the intended refresh or real-time update mechanism.
+
+Do not treat a local state update as proof that Firestore has saved the data.
+
+Use actual Firebase write operations and handle their success or failure.
+
+If a database write fails, retain unsaved form input when appropriate and offer a retry.
+
+Never display a successful save notification before the corresponding operation has succeeded.
+
+## 9. Firestore Security Rules
+
+Inspect the deployed Firestore Security Rules if the available tools permit.
+
+Check whether the current rules are blocking valid authenticated operations.
+
+Identify the specific collection, operation, and authorization condition responsible for any rejected request.
+
+Correct the rules while preserving the intended security boundaries.
+
+Required principles:
+
+- Students can read and update only permitted personal information.
+- Students cannot change their own role or approval status.
+- Students cannot approve their own journals, reports, or assessments.
+- Supervisors can access only students and records assigned to them.
+- Teachers can access and verify records within their authorized assignments.
+- Administrators can perform authorized administrative operations.
+- Private student information cannot be read by unauthorized users.
+- Sensitive status transitions cannot be forged through client-side requests.
+
+Do not solve permission errors by allowing every authenticated user unrestricted access.
+
+Do not deploy permissive development rules to production.
+
+If a protected operation legitimately requires server-side validation, implement it through the appropriate trusted backend mechanism.
+
+Clearly distinguish Firebase Rules permission failures from network failures, missing documents, incorrect collection paths, and authentication failures.
+
+## 10. Firebase Cloud Storage
+
+If the application uses Firebase Cloud Storage, audit all file-related operations.
+
+Verify:
+
+- The correct storage bucket is configured.
+- Upload paths match the existing data model.
+- The authenticated user has appropriate access.
+- File uploads finish before their corresponding metadata is treated as complete.
+- Firestore metadata contains the correct file references.
+- File downloads are authorized.
+- Failed uploads are handled without leaving misleading records.
+- Deletion handles both storage files and related metadata safely.
+
+Do not store file contents in Firestore as base64.
+
+Do not make student CVs, journals, activity documentation, reports, or assessments public merely to make uploads work.
+
+If storage configuration is missing, identify the required setup in Firebase Console.
+
+---
+
+# PART 3 — VERCEL PRODUCTION ENVIRONMENT
+
+## 11. Audit environment variables
+
+Inspect how the application loads Firebase configuration locally and in production.
+
+Compare:
+
+- Local development configuration.
+- Vercel Production environment variables.
+- Vercel Preview environment variables when relevant.
+- The environment variable names expected by the current framework.
+- The Firebase project and storage bucket used by each environment.
+
+Preserve the current framework and naming conventions.
+
+Do not blindly replace environment variable names with `VITE_*` or `NEXT_PUBLIC_*` unless those prefixes are appropriate for the actual build system.
+
+For client-side Firebase configuration, use the supported public configuration mechanism for the current framework.
+
+For privileged backend operations, use appropriate server-only environment variables.
+
+Never expose Firebase Admin SDK credentials, service account private keys, privileged API secrets, or other server-only secrets in frontend code.
+
+Identify any missing or incorrectly named variables.
+
+If an environment variable is missing from Vercel, provide its exact expected name and explain how to configure it securely. Do not invent secret values.
+
+Do not assume that changing a variable in Vercel automatically updates an existing production deployment. Verify whether a new deployment is required.
+
+## 12. Production build and deployment audit
+
+Inspect the actual Vercel build and runtime configuration.
+
+Check:
+
+- Build command.
+- Output directory.
+- Framework preset.
+- Node.js/runtime compatibility where relevant.
+- Required environment variables.
+- Client/server module boundaries.
+- Firebase initialization during build and runtime.
+- Browser-only API usage during server rendering, if applicable.
+- SPA routing and rewrite behavior.
+- Production build errors.
+- Runtime exceptions.
+- Failed API requests.
+- Missing dependencies.
+- Incorrect import paths or filename capitalization.
+- Asset loading.
+- Source maps and diagnostic visibility where appropriate.
+
+Do not add unnecessary rewrites or replace an existing correct routing configuration.
+
+If protected routes fail after refreshing a deep link, identify and correct the routing configuration only when the deployed application requires it.
+
+Keep frontend Firebase configuration separate from privileged server credentials.
+
+Do not remove security controls or change the production domain to hide deployment errors.
+
+## 13. Diagnostic procedure
+
+Use a systematic debugging sequence:
+
+1. Inspect the existing repository.
+2. Reproduce the failing login in the available development or preview environment.
+3. Examine the browser console errors.
+4. Examine failed network requests and HTTP status codes.
+5. Inspect Firebase Authentication errors.
+6. Inspect Firestore and Storage permission failures.
+7. Check Firebase project configuration and authorized domains.
+8. Check Vercel environment variable configuration.
+9. Inspect build logs and available runtime logs.
+10. Identify the root cause for each failure.
+11. Implement the smallest safe correction.
+12. Test the fix.
+13. Verify the resulting production configuration.
+
+If direct access to the deployed browser session or Vercel logs is unavailable, do not fabricate diagnostic findings.
+
+In that case, inspect all available code and configuration, implement the fixes that can be verified locally, and produce a precise list of remaining production checks and required user actions.
+
+---
+
+# PART 4 — COMPLETE UI/UX AUDIT AND REFINEMENT
+
+## 14. Global design requirements
+
+After addressing the critical authentication and persistence issues, perform a comprehensive UI/UX audit of every existing tab and page.
+
+The interface must remain consistent with the application's existing design direction.
+
+Reference visual identity:
+
+- Dark green sidebar.
+- Lime-green highlights.
+- Very light gray background.
+- White rounded cards.
+- Clean, professional typography.
+- Restrained shadows.
+- Consistent spacing.
+- Modern dashboard layout.
+
+Suggested existing design tokens:
+
+- Sidebar: `#061F16`
+- Sidebar selected state: `#102F23`
+- Primary green: `#0B3325`
+- Lime accent: `#B7F500`
+- Main background: `#F3F6F4`
+- Card background: `#FFFFFF`
+- Primary text: `#111A16`
+- Secondary text: `#718078`
+- Border: `#E6ECE8`
+
+Before changing styles, inspect the current design system and preserve the established colors and brand identity.
+
+Do not indiscriminately redesign each page with unrelated colors or component patterns.
+
+The goal is to make the whole application look like one cohesive, professionally designed product.
+
+## 15. Audit every existing page
+
+Inspect and refine all existing pages, including:
+
+1. Login and registration.
+2. Dashboard.
+3. Jadwal Magang.
+4. Presensi Digital.
+5. Jurnal Harian.
+6. Dokumentasi Kegiatan.
+7. Penilaian & Evaluasi.
+8. Laporan Akhir Magang.
+9. Pengumuman.
+10. Profil Saya.
+11. Role-specific supervisor pages.
+12. Role-specific teacher pages.
+13. Administrator pages.
+14. Settings, account menus, dialogs, and other existing secondary screens.
+
+Do not limit the UI/UX work to the dashboard.
+
+Every tab must have consistent layout behavior, typography, page headers, cards, forms, buttons, tables, filters, and responsive layouts.
+
+Do not create empty duplicate pages to satisfy this checklist. Work with the actual existing routes and components.
+
+## 16. Sidebar and navigation refinement
+
+Improve the sidebar while preserving the established visual identity.
+
+Check:
+
+- Navigation hierarchy.
+- Group labels.
+- Icon consistency.
+- Active-page highlighting.
+- Hover and focus states.
+- Text alignment.
+- Padding and spacing.
+- Sidebar width.
+- Collapsed sidebar behavior.
+- Profile area at the bottom.
+- Mobile drawer behavior.
+- Long labels and responsive truncation.
+
+Ensure that each navigation item leads to the correct existing route.
+
+Hide or disable navigation items only when appropriate for the user's actual permissions.
+
+Do not break role-based navigation.
+
+The selected menu item must correctly reflect the current route, including nested pages where applicable.
+
+## 17. Topbar refinement
+
+Review the topbar across all pages.
+
+Improve:
+
+- Alignment.
+- Search field dimensions.
+- Notification icon.
+- User profile dropdown.
+- Language switcher.
+- Sidebar toggle.
+- Breadcrumbs where useful.
+- Responsive behavior.
+- Clickable areas.
+- Keyboard accessibility.
+
+Avoid a cramped or overly crowded header on smaller devices.
+
+Ensure that the global search and notification controls remain functional rather than becoming decorative elements.
+
+## 18. Dashboard refinement
+
+Improve the information hierarchy of each role-specific dashboard.
+
+Check:
+- Heading and subtitle spacing.
+- Summary card alignment.
+- Card heights.
+- Chart proportions.
+- Text wrapping.
+- Legend placement.
+- Empty states.
+- Progress indicators.
+- Upcoming schedule cards.
+- Recent activity lists.
+- Announcement panels.
+- Loading states.
+
+Use genuine Firebase-backed information wherever the feature requires real data.
+
+Do not invent totals, charts, attendance percentages, announcements, or recent activity.
+
+When no data exists, provide an intentional empty state instead of a broken chart or a misleading zero-value visualization.
+
+Use a consistent card grid and make dashboard layouts adapt gracefully to different screen widths.
+
+## 19. Table and data-list refinement
+
+Audit every table and list across the application.
+
+Check:
+- Column spacing.
+- Text alignment.
+- Row height.
+- Information density.
+- Status badges.
+- Long text wrapping.
+- Date formatting.
+- Search fields.
+- Filters.
+- Pagination.
+- Empty-state display.
+- Loading skeletons.
+- Action menus.
+- Confirmation dialogs.
+
+Tables must not overflow the viewport on mobile.
+
+Use responsive alternatives such as stacked cards or controlled horizontal scrolling where appropriate.
+
+Do not hide critical record information merely to make the table fit.
+
+Preserve search, pagination, filters, and row actions.
+
+## 20. Form and upload UI refinement
+
+Review all data-entry forms, including:
+
+- Login.
+- Registration.
+- Profile.
+- Schedules.
+- Journals.
+- Activity documentation.
+- Assessments.
+- Final reports.
+- Announcements.
+- Administrative forms.
+
+Ensure forms have:
+- Consistent labels.
+- Useful placeholders.
+- Clear field requirements.
+- Appropriate validation.
+- Visible inline errors.
+- Clear focus states.
+- Logical tab order.
+- Consistent input heights.
+- Appropriate spacing.
+- Save/cancel button hierarchy.
+- Confirmation when necessary.
+- Loading and submission states.
+- Protection against accidental duplicate submissions.
+
+For file uploads, ensure that the selected file, file name, file size, upload progress, success state, and error state are clearly communicated.
+
+Do not claim a file has been uploaded before the storage operation succeeds.
+
+Preserve unsaved form input when an operation fails, where appropriate.
+
+## 21. Responsive design requirements
+
+Audit the complete application at representative screen widths, including:
+
+- Mobile: approximately 360–390 px.
+- Larger mobile devices: approximately 430 px.
+- Tablet: approximately 768 px.
+- Laptop: approximately 1280 px.
+- Desktop: approximately 1440 px and above.
+
+The application must remain usable across these widths.
+
+Check:
+- No accidental horizontal overflow.
+- Sidebar does not obstruct the main content.
+- Mobile navigation opens and closes correctly.
+- Modals fit within the viewport.
+- Long forms remain usable.
+- Tables adapt appropriately.
+- Cards wrap into sensible grids.
+- Buttons remain accessible.
+- Text remains readable.
+- Charts resize correctly.
+- Dropdowns are not clipped.
+- Touch targets are sufficiently large.
+- Images and attachments scale correctly.
+
+Do not simply shrink the desktop interface. Reflow the layout appropriately for the available viewport.
+
+## 22. UI state consistency and usability
+
+Improve the consistency of all interactive states:
+
+- Loading.
+- Saving.
+- Success.
+- Error.
+- Empty.
+- Disabled.
+- Hover.
+- Focus.
+- Selected.
+- Expanded.
+- Collapsed.
+
+Avoid excessive animations, unnecessary decorative components, inconsistent button styles, oversized empty areas, cramped forms, and visually noisy dashboards.
+
+Use animation sparingly and respect reduced-motion preferences where practical.
+
+Ensure that critical controls remain easy to distinguish and that the primary action on every page is clear.
+
+Do not introduce unnecessary dependencies or heavy visual effects.
+
+## 23. Accessibility and language consistency
+
+Maintain Bahasa Indonesia as the default language and English as the secondary language.
+
+Ensure all new or revised interface text follows the existing language-switching architecture.
+
+Do not leave a mixture of Indonesian and English in the same interface state unless the term is a proper technical label.
+
+Review:
+- Contrast.
+- Keyboard navigation.
+- Visible focus indicators.
+- Form labels.
+- Button names.
+- Modal focus behavior.
+- Screen-reader labels for icon-only buttons.
+- Validation-message accessibility.
+
+Do not use color as the only indicator of record status.
+
+Ensure that the login interface remains easy to understand and accessible.
+
+---
+
+# PART 5 — CODE QUALITY AND NON-REGRESSION
+
+## 24. Preserve the existing application
+
+Before modifying files:
+
+1. Inspect the repository structure.
+2. Identify the current framework and routing system.
+3. Identify shared components and design tokens.
+4. Identify all existing authentication and Firebase services.
+5. Identify the data models and authorization architecture.
+6. Establish which features currently work.
+7. Identify the root causes of the production failures.
+
+Then make targeted changes.
+
+Do not replace the current repository with a new scaffold.
+
+Do not discard existing project history, configuration, data schemas, or working components without a necessary and documented reason.
+
+Do not change unrelated business rules.
+
+Do not expose private environment variables.
+
+Do not overwrite existing data as part of a routine login.
+
+Do not create fake demo accounts in production.
+
+## 25. Maintainable implementation
+
+Use the existing coding conventions and framework.
+
+Where appropriate:
+- Reuse shared UI components.
+- Reuse the established Firebase service layer.
+- Centralize error handling.
+- Avoid duplicated initialization.
+- Keep authentication logic separate from presentation logic.
+- Keep privileged backend operations on the server.
+- Use proper TypeScript types if the project uses TypeScript.
+- Remove dead code only when safe.
+- Resolve unused or incorrect imports.
+- Avoid unnecessary packages.
+
+Do not make a broad refactor merely for stylistic preference.
+
+Prioritize reliability, security, maintainability, and visual consistency.
+
+---
+
+# PART 6 — REQUIRED TESTING
+
+## 26. Authentication tests
+
+Test the following scenarios when the necessary environment and credentials are available:
+
+1. An existing Google-authenticated user can log in.
+2. A new Google-authenticated student is handled according to the registration policy.
+3. An existing email/password user can log in.
+4. Invalid email/password credentials are rejected.
+5. Password reset works or its configuration limitation is identified.
+6. A canceled Google login does not break the application.
+7. An unauthorized domain produces a clear diagnostic.
+8. Authentication state persists as intended after refresh.
+9. Logout works.
+10. Pending students cannot access restricted pages.
+11. Suspended or rejected users are handled correctly.
+12. A user cannot gain another role through client-side manipulation.
+
+Do not create test accounts using real students' personal information.
+
+Use suitable test accounts and environments.
+
+## 27. Data persistence tests
+
+Verify that:
+
+1. A new permitted profile can be saved.
+2. Existing profile information is preserved.
+3. A schedule can be read and updated according to permissions.
+4. A journal draft persists.
+5. A submitted journal has the correct status.
+6. A journal review is saved.
+7. An uploaded attachment references the correct storage object.
+8. A final report is persisted and can be retrieved by its authorized owner.
+9. A published assessment is available only to authorized users.
+10. Dashboard statistics reflect actual database records.
+11. Refreshing the page does not revert successfully persisted changes.
+12. Database permission failures do not produce false success messages.
+
+For each test, distinguish between actual success, a failure, and a test that could not be performed.
+
+## 28. UI/UX regression tests
+
+Review:
+
+- Every existing route.
+- All sidebar links.
+- All role-specific navigation.
+- Login and registration.
+- Forms and validation.
+- Dialogs and dropdowns.
+- File upload controls.
+- Search and filters.
+- Mobile navigation.
+- Responsive tables and cards.
+- Loading and error states.
+
+Verify that UI changes do not break working functionality.
+
+If browser testing is available, test the deployed preview at representative screen sizes.
+
+If direct production testing is unavailable, clearly distinguish local verification from confirmed production verification.
+
+## 29. Production deployment verification
+
+After applying the fixes:
+
+1. Run the available lint and type checks.
+2. Run relevant unit or integration tests.
+3. Build the application using the production build command.
+4. Fix build failures caused by the changes.
+5. Verify the environment variable requirements.
+6. Verify Firebase configuration consistency.
+7. Verify the production hostname requirements.
+8. Identify any manual Firebase Console changes.
+9. Identify whether a new Vercel deployment is required.
+10. Verify the actual deployment result if deployment access is available.
+
+Do not claim successful authentication in production unless it has actually been tested on the deployed application.
+
+Do not claim a successful deployment if the build or deployment failed.
+
+Do not publish changes to GitHub or trigger production deployment unless the required connection and authorization are available.
+
+---
+
+# PART 7 — FINAL DELIVERABLES
+
+Once implementation is complete, provide a concise but informative report.
+
+### A. Authentication and Firebase
+
+Explain:
+- The root causes discovered.
+- The code changes applied.
+- The Firebase configuration changes required.
+- The Vercel environment variables that were missing or corrected.
+- The authorization or data-persistence rules that were adjusted.
+- The tests performed.
+- Remaining configuration steps.
+
+Do not report a diagnosis as confirmed unless evidence supports it.
+
+### B. UI/UX
+
+Explain:
+- Which pages were reviewed.
+- Which shared components were improved.
+- Changes to navigation, spacing, cards, tables, forms, and responsiveness.
+- Accessibility and state-handling improvements.
+- Any intentionally unchanged areas.
+
+### C. Deployment readiness
+
+Report separately:
+- Local build status.
+- Test status.
+- Firebase integration status.
+- GitHub synchronization status.
+- Vercel deployment status.
+- Actual production login verification status.
+
+For every incomplete item, provide the exact remaining action.
+
+### D. Final quality criteria
+
+The task is complete only when:
+
+- Google Sign-In has been investigated and corrected as far as the available configuration permits.
+- Email/password authentication has been investigated and corrected as far as the available configuration permits.
+- Authentication state is handled reliably.
+- The application no longer falsely reports success when a database operation fails.
+- Firestore writes and reads use the correct identity and authorization model.
+- File uploads remain private and functional.
+- Existing features continue to work.
+- All existing menu pages have received a consistent UI/UX review.
+- The application has been checked for responsive behavior.
+- Production readiness claims are supported by actual verification.
+
+If an external configuration is still required, document it rather than bypassing it.
+
+---
+
+# EXECUTION COMMAND
+
+Begin by inspecting the existing codebase and diagnosing the production failures.
+
+Fix authentication and data persistence first because these issues block users from using the application.
+
+Then conduct the comprehensive UI/UX refinement across every existing menu and role-specific page.
+
+Implement the changes directly in the existing project, run the available tests and production build, resolve regressions, and provide a clear implementation report.
+
+**Do not stop after offering suggestions or generating a new design. Deliver the actual code changes and verify what can be verified. Preserve the existing application, Firebase project, user records, data relationships, and core functionality throughout the process.**

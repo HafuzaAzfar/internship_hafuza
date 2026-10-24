@@ -226,3 +226,77 @@ export async function deleteJournalAttachment(storagePath: string): Promise<void
   }
 }
 
+/**
+ * Upload a single file (e.g. profile photo, CV, or final report) to Firebase Cloud Storage.
+ * Avoids storing large base64 data in Firestore.
+ */
+export async function uploadSingleFile(
+  file: File,
+  storagePath: string,
+  onProgress?: (percent: number, statusText: string) => void
+): Promise<{ url: string; path: string }> {
+  if (onProgress) onProgress(10, `Memulai unggahan ${file.name}...`);
+
+  try {
+    const storageRef = ref(storage, storagePath);
+    const uploadTask = uploadBytesResumable(storageRef, file, {
+      contentType: file.type || 'application/octet-stream',
+      customMetadata: {
+        originalName: file.name,
+      }
+    });
+
+    const downloadUrl = await new Promise<string>((resolve, reject) => {
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+          if (onProgress) {
+            onProgress(percent, `Mengunggah ${file.name}: ${percent}%`);
+          }
+        },
+        (error) => {
+          console.warn(`Storage upload warning for ${file.name}:`, error);
+          reject(error);
+        },
+        async () => {
+          try {
+            const url = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(url);
+          } catch (err) {
+            reject(err);
+          }
+        }
+      );
+    });
+
+    if (onProgress) onProgress(100, `Berhasil mengunggah ${file.name}`);
+    return { url: downloadUrl, path: storagePath };
+  } catch (err) {
+    console.warn(`Fallback for file ${file.name}:`, err);
+    // If small (< 300KB), can fallback to DataURL; otherwise rethrow so user knows
+    if (file.size <= 350 * 1024) {
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+      return { url: dataUrl, path: storagePath };
+    }
+    throw new Error(`Gagal mengunggah berkas ${file.name} ke Cloud Storage: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+/**
+ * Delete any single file from Cloud Storage
+ */
+export async function deleteSingleFile(storagePath: string): Promise<void> {
+  try {
+    const storageRef = ref(storage, storagePath);
+    await deleteObject(storageRef);
+  } catch (err) {
+    console.warn('Could not delete file from Cloud Storage:', err);
+  }
+}
+
+

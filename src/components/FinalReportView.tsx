@@ -17,6 +17,7 @@ import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { FinalReportItem, FinalReportStatus } from '../types';
+import { uploadSingleFile } from '../firebase/storageHelper';
 
 export const FinalReportView: React.FC = () => {
   const { profile, effectiveRole } = useAuth();
@@ -31,11 +32,13 @@ export const FinalReportView: React.FC = () => {
 
   // Upload state
   const [reportTitle, setReportTitle] = useState('');
-  const [pdfDataUrl, setPdfDataUrl] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState('');
   const [fileSize, setFileSize] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgressText, setUploadProgressText] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
   // Teacher feedback state
   const [feedbackText, setFeedbackText] = useState('');
@@ -68,35 +71,43 @@ export const FinalReportView: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type !== 'application/pdf') {
-      setErrorMsg('Hanya file dokumen PDF yang diperbolehkan.');
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
+      setErrorMsg('Hanya file dokumen PDF resmi yang diperbolehkan.');
       return;
     }
 
-    if (file.size > 20 * 1024 * 1024) {
-      setErrorMsg('Ukuran file maksimal 20MB.');
+    if (file.size > 25 * 1024 * 1024) {
+      setErrorMsg('Ukuran file maksimal 25MB.');
       return;
     }
 
     setErrorMsg('');
     setFileName(file.name);
     setFileSize(file.size);
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPdfDataUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    setSelectedFile(file);
   };
 
   const handleUploadReport = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile?.uid || !pdfDataUrl) return;
+    if (!profile?.uid || !selectedFile) {
+      setErrorMsg('Silakan pilih berkas dokumen PDF laporan akhir terlebih dahulu.');
+      return;
+    }
 
     setUploading(true);
+    setErrorMsg('');
+    setSuccessMsg('');
     try {
       const nowStr = new Date().toISOString();
       const newVersion = (report?.version || 0) + 1;
+      const cleanFileName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const storagePath = `finalReports/${profile.uid}/v${newVersion}_${Date.now()}_${cleanFileName}`;
+
+      setUploadProgressText('Mengunggah dokumen laporan ke Cloud Storage...');
+      const uploadResult = await uploadSingleFile(selectedFile, storagePath, (pct, txt) => {
+        setUploadProgressText(txt);
+      });
 
       const reportData: FinalReportItem = {
         id: profile.uid,
@@ -104,9 +115,9 @@ export const FinalReportView: React.FC = () => {
         studentName: profile.displayName || 'Peserta Magang',
         studentEmail: profile.email || '',
         title: reportTitle.trim() || `Laporan Akhir Magang - ${profile.displayName}`,
-        fileUrl: pdfDataUrl,
-        fileName: fileName || 'Laporan_Akhir_Magang.pdf',
-        fileSize,
+        fileUrl: uploadResult.url,
+        fileName: selectedFile.name,
+        fileSize: selectedFile.size,
         version: newVersion,
         status: 'submitted',
         submittedAt: nowStr,
@@ -124,13 +135,18 @@ export const FinalReportView: React.FC = () => {
         createdAt: nowStr,
       });
 
-      setPdfDataUrl('');
-    } catch (err) {
+      setSelectedFile(null);
+      setSuccessMsg(`Laporan akhir magang (versi ${newVersion}) berhasil dikirim untuk verifikasi guru.`);
+      setTimeout(() => setSuccessMsg(''), 4500);
+    } catch (err: any) {
       console.error('Failed to submit final report:', err);
+      setErrorMsg(`Gagal mengunggah laporan akhir: ${err?.message || 'Terjadi kesalahan sistem'}`);
     } finally {
       setUploading(false);
+      setUploadProgressText('');
     }
   };
+
 
   const handleTeacherReview = async () => {
     if (!studentUid) return;
@@ -258,17 +274,38 @@ export const FinalReportView: React.FC = () => {
                 {fileName && (
                   <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-[#16A34A] flex items-center justify-between">
                     <span className="font-semibold">{fileName}</span>
-                    <span className="text-[10px]">{(fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                    <span className="text-[10px] font-bold">{(fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                  </div>
+                )}
+
+                {uploadProgressText && (
+                  <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-[#0B3325] flex items-center gap-2 animate-pulse">
+                    <Upload className="w-4 h-4 text-[#16A34A]" />
+                    <span>{uploadProgressText}</span>
+                  </div>
+                )}
+
+                {successMsg && (
+                  <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{successMsg}</span>
+                  </div>
+                )}
+
+                {errorMsg && (
+                  <div className="p-3 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 font-semibold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                    <span>{errorMsg}</span>
                   </div>
                 )}
 
                 <button
                   type="submit"
-                  disabled={uploading || !pdfDataUrl}
-                  className="px-5 py-2.5 rounded-full text-xs font-bold bg-[#0B3325] text-[#B7F500] hover:bg-[#102F23] flex items-center gap-2 transition-all"
+                  disabled={uploading || !selectedFile}
+                  className="px-5 py-2.5 rounded-full text-xs font-bold bg-[#0B3325] text-[#B7F500] hover:bg-[#102F23] flex items-center gap-2 transition-all disabled:opacity-50"
                 >
                   <Upload className="w-4 h-4" />
-                  <span>{uploading ? 'Mengunggah...' : 'Kirim Laporan Akhir ke Guru'}</span>
+                  <span>{uploading ? 'Mengunggah ke Cloud Storage...' : 'Kirim Laporan Akhir ke Guru'}</span>
                 </button>
               </form>
             </div>

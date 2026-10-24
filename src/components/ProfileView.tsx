@@ -13,10 +13,12 @@ import {
   Phone, 
   Award,
   Save,
-  Download
+  Download,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { uploadSingleFile } from '../firebase/storageHelper';
 
 export const ProfileView: React.FC = () => {
   const { profile, effectiveRole, updateUserProfile } = useAuth();
@@ -35,49 +37,70 @@ export const ProfileView: React.FC = () => {
   const [cvFileName, setCvFileName] = useState(profile?.cvFileName || '');
 
   const [saving, setSaving] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [cvMsg, setCvMsg] = useState('');
 
-  // Handle Photo upload
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle Photo upload to Cloud Storage
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !profile?.uid) return;
 
     if (file.size > 5 * 1024 * 1024) {
       alert('Ukuran foto profil maksimal 5MB.');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPhotoURL(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    try {
+      setUploadStatus('Mengunggah foto profil...');
+      const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const storagePath = `profilePhotos/${profile.uid}/${Date.now()}_${cleanName}`;
+      const result = await uploadSingleFile(file, storagePath, (pct, txt) => {
+        setUploadStatus(txt);
+      });
+      setPhotoURL(result.url);
+      setUploadStatus(null);
+    } catch (err: any) {
+      console.error('Photo upload failed:', err);
+      setUploadStatus(null);
+      setErrorMsg(`Gagal mengunggah foto profil: ${err.message || 'Kesalahan penyimpanan'}`);
+    }
   };
 
-  // Handle CV Upload
-  const handleCvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle CV Upload to Cloud Storage
+  const handleCvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !profile?.uid) return;
 
     if (file.size > 10 * 1024 * 1024) {
       alert('Ukuran file CV maksimal 10MB.');
       return;
     }
 
-    setCvFileName(file.name);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setCvUrl(reader.result as string);
+    try {
+      setUploadStatus('Mengunggah berkas CV...');
+      setCvFileName(file.name);
+      const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const storagePath = `userCvs/${profile.uid}/${Date.now()}_${cleanName}`;
+      const result = await uploadSingleFile(file, storagePath, (pct, txt) => {
+        setUploadStatus(txt);
+      });
+      setCvUrl(result.url);
+      setUploadStatus(null);
       setCvMsg('CV berhasil diunggah. Klik Simpan Perubahan Profil untuk menyimpan.');
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error('CV upload failed:', err);
+      setUploadStatus(null);
+      setErrorMsg(`Gagal mengunggah CV: ${err.message || 'Kesalahan penyimpanan'}`);
+    }
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setSuccessMsg(false);
+    setErrorMsg(null);
     try {
       await updateUserProfile({
         displayName: displayName.trim(),
@@ -92,9 +115,10 @@ export const ProfileView: React.FC = () => {
         cvFileName,
       });
       setSuccessMsg(true);
-      setTimeout(() => setSuccessMsg(false), 3000);
-    } catch (err) {
+      setTimeout(() => setSuccessMsg(false), 3500);
+    } catch (err: any) {
       console.error('Failed to update profile:', err);
+      setErrorMsg(`Gagal menyimpan perubahan profil: ${err?.message || 'Periksa koneksi Anda'}`);
     } finally {
       setSaving(false);
     }
@@ -104,9 +128,12 @@ export const ProfileView: React.FC = () => {
     if (!cvUrl) return;
     const a = document.createElement('a');
     a.href = cvUrl;
+    a.target = '_blank';
+    a.rel = 'noreferrer';
     a.download = cvFileName || 'Curriculum_Vitae.pdf';
     a.click();
   };
+
 
   return (
     <div className="space-y-6">
@@ -124,6 +151,20 @@ export const ProfileView: React.FC = () => {
           <div className="px-4 py-2 rounded-full bg-emerald-50 text-[#16A34A] text-xs font-semibold flex items-center gap-2 border border-emerald-200">
             <CheckCircle2 className="w-4 h-4" />
             <span>Perubahan berhasil disimpan!</span>
+          </div>
+        )}
+
+        {errorMsg && (
+          <div className="px-4 py-2 rounded-2xl bg-red-50 text-red-700 text-xs font-medium flex items-center gap-2 border border-red-200">
+            <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
+        {uploadStatus && (
+          <div className="px-4 py-2 rounded-full bg-emerald-50 text-[#0B3325] text-xs font-bold flex items-center gap-2 border border-emerald-200 animate-pulse">
+            <Upload className="w-3.5 h-3.5 text-[#16A34A]" />
+            <span>{uploadStatus}</span>
           </div>
         )}
       </div>
